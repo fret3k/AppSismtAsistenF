@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
@@ -41,6 +41,17 @@ const Login: React.FC = () => {
 
     return (
         <div className="login-container">
+            {/* Navbar con enlace de Inicio */}
+            <nav className="login-navbar">
+                <Link to="/" className="login-navbar-brand">
+                    <div className="login-navbar-logo">PJP</div>
+                    <span>SICAF</span>
+                </Link>
+                <Link to="/" className="btn-inicio">
+                    ← Inicio
+                </Link>
+            </nav>
+
             <div className="login-card">
                 <div className="login-header">
                     <div className="login-logo">PJP</div>

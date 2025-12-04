@@ -1,22 +1,27 @@
 import { apiRequest } from './api';
-import type { Personal } from '../types';
+import type {
+    PersonalResponseDTO,
+    PersonalCreateDTO,
+    PersonalRegisterWithEncodingDTO,
+    PersonalRegisterWithEncodingResponse
+} from '../types';
 
-// Personal Service - CRUD operations
+// Personal Service - CRUD operations for consuming the API
 export const personalService = {
-    // Get all personal
-    async getAll(): Promise<Personal[]> {
-        return await apiRequest<Personal[]>('/personal', {}, true);
+    // Get all personal - GET /personal/
+    async getAll(): Promise<PersonalResponseDTO[]> {
+        return await apiRequest<PersonalResponseDTO[]>('/personal/', {}, true);
     },
 
-    // Get personal by ID
-    async getById(id: number): Promise<Personal> {
-        return await apiRequest<Personal>(`/personal/${id}`, {}, true);
+    // Get personal by ID - GET /personal/{personal_id}
+    async getById(id: string): Promise<PersonalResponseDTO> {
+        return await apiRequest<PersonalResponseDTO>(`/personal/${id}`, {}, true);
     },
 
-    // Create new personal
-    async create(data: Omit<Personal, 'id'>): Promise<Personal> {
-        return await apiRequest<Personal>(
-            '/personal',
+    // Create new personal - POST /personal/
+    async create(data: PersonalCreateDTO): Promise<PersonalResponseDTO> {
+        return await apiRequest<PersonalResponseDTO>(
+            '/personal/',
             {
                 method: 'POST',
                 body: JSON.stringify(data),
@@ -25,21 +30,21 @@ export const personalService = {
         );
     },
 
-    // Update personal
-    async update(id: number, data: Partial<Personal>): Promise<Personal> {
-        return await apiRequest<Personal>(
-            `/personal/${id}`,
+    // Register personal with face encoding - POST /personal/register-with-encoding
+    async registerWithEncoding(data: PersonalRegisterWithEncodingDTO): Promise<PersonalRegisterWithEncodingResponse> {
+        return await apiRequest<PersonalRegisterWithEncodingResponse>(
+            '/personal/register-with-encoding',
             {
-                method: 'PUT',
+                method: 'POST',
                 body: JSON.stringify(data),
             },
             true
         );
     },
 
-    // Delete personal
-    async delete(id: number): Promise<void> {
-        return await apiRequest<void>(
+    // Delete personal - DELETE /personal/{personal_id}
+    async delete(id: string): Promise<void> {
+        await apiRequest<void>(
             `/personal/${id}`,
             {
                 method: 'DELETE',

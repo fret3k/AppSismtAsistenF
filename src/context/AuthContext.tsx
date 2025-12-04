@@ -29,19 +29,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const login = async (email: string, password: string) => {
         try {
-            await authService.login({ email, password });
+            // Step 1: Login and get access token + personal data
+            const loginResponse = await authService.login({ email, password });
 
-            // TODO: Fetch user data from API after login
-            // For now, we'll create a mock user based on email
-            const mockUser: User = {
-                id: 1,
-                email,
-                nombre: email.split('@')[0],
-                rol: email.includes('admin') ? 'admin' : 'user',
+            // Step 2: Convert PersonalResponseDTO to User (data comes directly from login response)
+            const userData: User = {
+                id: loginResponse.personal.id,
+                email: loginResponse.personal.email,
+                nombre: loginResponse.personal.nombre,
+                apellido_paterno: loginResponse.personal.apellido_paterno,
+                apellido_materno: loginResponse.personal.apellido_materno,
+                rol: loginResponse.personal.es_administrador ? 'admin' : 'user',
+                es_administrador: loginResponse.personal.es_administrador,
             };
 
-            setUser(mockUser);
-            localStorage.setItem('user', JSON.stringify(mockUser));
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
         } catch (error) {
             console.error('Login error:', error);
             throw error;

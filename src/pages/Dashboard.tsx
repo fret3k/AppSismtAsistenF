@@ -1,16 +1,16 @@
 import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
+import PersonalPage from './PersonalPage';
 import './Dashboard.css';
 
-const Dashboard: React.FC = () => {
-    const { user, isAdmin } = useAuth();
+// Dashboard Home Component
+const DashboardHome: React.FC = () => {
+    const { isAdmin } = useAuth();
 
     return (
-        <DashboardLayout
-            title="Dashboard"
-            subtitle={`Bienvenido, ${user?.nombre || 'Usuario'}`}
-        >
+        <>
             <div className="dashboard-grid">
                 <div className="stat-card">
                     <div className="stat-icon">👥</div>
@@ -93,7 +93,164 @@ const Dashboard: React.FC = () => {
                     </div>
                 )}
             </div>
-        </DashboardLayout>
+        </>
+    );
+};
+
+// Placeholder components for other routes
+const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
+    <div style={{ padding: '2rem' }}>
+        <h2>{title}</h2>
+        <p>Esta página está en desarrollo.</p>
+    </div>
+);
+
+const Dashboard: React.FC = () => {
+    const { user } = useAuth();
+
+    return (
+        <Routes>
+            <Route
+                path="/"
+                element={
+                    <DashboardLayout
+                        title="Dashboard"
+                        subtitle={`Bienvenido, ${user?.nombre || 'Usuario'}`}
+                    >
+                        <DashboardHome />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/personal"
+                element={
+                    <DashboardLayout title="Gestión de Personal" subtitle="Administra el personal del sistema">
+                        <PersonalPage />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/mi-perfil"
+                element={
+                    <DashboardLayout title="Mi Perfil" subtitle="Información personal">
+                        <PlaceholderPage title="Mi Perfil" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/asistencias"
+                element={
+                    <DashboardLayout title="Registro de Asistencias" subtitle="Registra tu asistencia">
+                        <PlaceholderPage title="Registro de Asistencias" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/mis-asistencias"
+                element={
+                    <DashboardLayout title="Mis Asistencias" subtitle="Historial de asistencias">
+                        <PlaceholderPage title="Mis Asistencias" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/reporte-asistencias"
+                element={
+                    <DashboardLayout title="Reporte de Asistencias" subtitle="Reporte general">
+                        <PlaceholderPage title="Reporte de Asistencias" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/permisos"
+                element={
+                    <DashboardLayout title="Gestión de Permisos" subtitle="Administra permisos">
+                        <PlaceholderPage title="Gestión de Permisos" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/mis-permisos"
+                element={
+                    <DashboardLayout title="Mis Permisos" subtitle="Mis solicitudes de permisos">
+                        <PlaceholderPage title="Mis Permisos" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/encoding-faces"
+                element={
+                    <DashboardLayout title="Gestión de Encodings" subtitle="Administra encodings faciales">
+                        <PlaceholderPage title="Gestión de Encodings" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/registrar-rostro"
+                element={
+                    <DashboardLayout title="Registrar Rostro" subtitle="Registra tu rostro para reconocimiento">
+                        <PlaceholderPage title="Registrar Rostro" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/reportes"
+                element={
+                    <DashboardLayout title="Reportes Generales" subtitle="Reportes del sistema">
+                        <PlaceholderPage title="Reportes Generales" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/estadisticas"
+                element={
+                    <DashboardLayout title="Estadísticas" subtitle="Estadísticas del sistema">
+                        <PlaceholderPage title="Estadísticas" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/exportar"
+                element={
+                    <DashboardLayout title="Exportar Datos" subtitle="Exporta datos del sistema">
+                        <PlaceholderPage title="Exportar Datos" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/configuracion"
+                element={
+                    <DashboardLayout title="Configuración" subtitle="Configuración del sistema">
+                        <PlaceholderPage title="Configuración" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/usuarios"
+                element={
+                    <DashboardLayout title="Gestión de Usuarios" subtitle="Administra usuarios del sistema">
+                        <PlaceholderPage title="Gestión de Usuarios" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/ayuda"
+                element={
+                    <DashboardLayout title="Ayuda" subtitle="Centro de ayuda">
+                        <PlaceholderPage title="Ayuda" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/version"
+                element={
+                    <DashboardLayout title="Versión" subtitle="Información del sistema">
+                        <PlaceholderPage title="Versión del Sistema" />
+                    </DashboardLayout>
+                }
+            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
     );
 };
 
