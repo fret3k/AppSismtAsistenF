@@ -54,7 +54,7 @@
 .btn-navbar {
     background: rgba(255, 255, 255, 0.2);
     color: var(--white);
-    padding: 10px 24px;
+    padding: 4px 8px;
     border-radius: 25px;
     font-weight: 600;
     font-size: 0.95rem;
@@ -72,9 +72,18 @@
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+.navbar-image {
+    width: 60x;
+    /* Nuevo ancho */
+    height: 60px;
+    /* Nueva altura */
+    object-fit: contain;
+}
+
+
 @media (max-width: 768px) {
     .navbar {
-        padding: 12px 20px;
+        padding: 10px 20px;
     }
 
     .navbar-brand {
@@ -91,4 +100,5 @@
         padding: 8px 18px;
         font-size: 0.85rem;
     }
+
 }

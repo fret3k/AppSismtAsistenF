@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
-
+import logoMin from '../assets/logo_corte_min.jpg';
+import logo from '../assets/logo_corte.jpg';
 const Login: React.FC = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -44,9 +45,12 @@ const Login: React.FC = () => {
             {/* Navbar con enlace de Inicio */}
             <nav className="login-navbar">
                 <Link to="/" className="login-navbar-brand">
-                    <div className="login-navbar-logo">PJP</div>
+                    <div className="login-navbar-logo">
+                        <img src={logo} alt="Logo" className="navbar-image" />
+                    </div>
                     <span>SICAF</span>
                 </Link>
+
                 <Link to="/" className="btn-inicio">
                     ← Inicio
                 </Link>
@@ -54,9 +58,9 @@ const Login: React.FC = () => {
 
             <div className="login-card">
                 <div className="login-header">
-                    <div className="login-logo">PJP</div>
-                    <h1>SICAPE</h1>
-                    <p>Sistema Control de Asistencia y Permanencia</p>
+                    <img src={logoMin} alt="Logo" className="navbar-image" />
+                    <h1>SICAF</h1>
+                    <p>Sistema Control de Asistencia Facial</p>
                 </div>
 
                 <form className="login-form" onSubmit={handleSubmit}>
@@ -115,13 +119,14 @@ const Login: React.FC = () => {
                     </button>
                 </form>
 
-                <div className="login-footer">
+                {/* <div className="login-footer">
                     <p className="demo-info">
                         <strong>Usuarios de prueba:</strong><br />
                         Admin: admin@sicape.com / password<br />
                         Usuario: user@sicape.com / password
                     </p>
                 </div>
+               */}
             </div>
         </div>
     );

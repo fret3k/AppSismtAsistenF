@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 import PersonalPage from './PersonalPage';
+import ConfiguracionPage from './ConfiguracionPage';
 import './Dashboard.css';
 
 // Dashboard Home Component
@@ -221,7 +222,7 @@ const Dashboard: React.FC = () => {
                 path="/configuracion"
                 element={
                     <DashboardLayout title="Configuración" subtitle="Configuración del sistema">
-                        <PlaceholderPage title="Configuración" />
+                        <ConfiguracionPage />
                     </DashboardLayout>
                 }
             />

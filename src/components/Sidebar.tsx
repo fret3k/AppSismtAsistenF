@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
+import logoMin from '../assets/logo_corte_min.jpg';
+
 
 const Sidebar: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -69,10 +71,10 @@ const Sidebar: React.FC = () => {
 
             <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
-                    <div className="sidebar-logo">PJP</div>
+                    <img src={logoMin} alt="Logo" className="navbar-image" />
                     <div className="sidebar-title">
-                        <h2>SICAPE</h2>
-                        <p>Sistema de Control</p>
+                        <h2>SICAF</h2>
+                        <p>Sistema Control Asistencia Facial</p>
                     </div>
                 </div>
 
@@ -130,7 +132,7 @@ const Sidebar: React.FC = () => {
                     </button>
 
                     <div className="version-info">
-                        v1.0.0 - SICAPE 2025
+                        v1.0.0 - SICAF 2025
                     </div>
                 </div>
             </aside>
