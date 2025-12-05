@@ -2,6 +2,7 @@ import { apiRequest } from './api';
 import type {
     PersonalResponseDTO,
     PersonalCreateDTO,
+    PersonalUpdateDTO,
     PersonalRegisterWithEncodingDTO,
     PersonalRegisterWithEncodingResponse
 } from '../types';
@@ -36,6 +37,18 @@ export const personalService = {
             '/personal/register-with-encoding',
             {
                 method: 'POST',
+                body: JSON.stringify(data),
+            },
+            true
+        );
+    },
+
+    // Update personal - PATCH /personal/{personal_id}
+    async update(id: string, data: PersonalUpdateDTO): Promise<PersonalResponseDTO> {
+        return await apiRequest<PersonalResponseDTO>(
+            `/personal/${id}`,
+            {
+                method: 'PATCH',
                 body: JSON.stringify(data),
             },
             true

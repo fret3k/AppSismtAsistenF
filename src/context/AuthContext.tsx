@@ -9,6 +9,7 @@ interface AuthContextType {
     isAdmin: boolean;
     login: (email: string, password: string) => Promise<void>;
     logout: () => void;
+    updateUser: (userData: Partial<User>) => void;
     loading: boolean;
 }
 
@@ -57,12 +58,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.removeItem('user');
     };
 
+    // Update user data locally after profile update
+    const updateUser = (userData: Partial<User>) => {
+        if (user) {
+            const updatedUser = { ...user, ...userData };
+            setUser(updatedUser);
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+        }
+    };
+
     const value: AuthContextType = {
         user,
         isAuthenticated: !!user,
         isAdmin: user?.rol === 'admin',
         login,
         logout,
+        updateUser,
         loading,
     };
 

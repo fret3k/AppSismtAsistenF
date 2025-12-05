@@ -4,6 +4,8 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 import PersonalPage from './PersonalPage';
 import ConfiguracionPage from './ConfiguracionPage';
+import MiPerfilPage from './MiPerfilPage';
+import Icon from '../components/Icon';
 import './Dashboard.css';
 
 // Dashboard Home Component
@@ -14,7 +16,9 @@ const DashboardHome: React.FC = () => {
         <>
             <div className="dashboard-grid">
                 <div className="stat-card">
-                    <div className="stat-icon">👥</div>
+                    <div className="stat-icon">
+                        <Icon name="users" size={28} />
+                    </div>
                     <div className="stat-content">
                         <h3>Personal Activo</h3>
                         <p className="stat-number">45</p>
@@ -22,7 +26,9 @@ const DashboardHome: React.FC = () => {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">✅</div>
+                    <div className="stat-icon">
+                        <Icon name="check-circle" size={28} />
+                    </div>
                     <div className="stat-content">
                         <h3>Asistencias Hoy</h3>
                         <p className="stat-number">38</p>
@@ -30,7 +36,9 @@ const DashboardHome: React.FC = () => {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">📝</div>
+                    <div className="stat-icon">
+                        <Icon name="file-text" size={28} />
+                    </div>
                     <div className="stat-content">
                         <h3>Permisos Pendientes</h3>
                         <p className="stat-number">{isAdmin ? '5' : '2'}</p>
@@ -38,7 +46,9 @@ const DashboardHome: React.FC = () => {
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">⏰</div>
+                    <div className="stat-icon">
+                        <Icon name="clock" size={28} />
+                    </div>
                     <div className="stat-content">
                         <h3>Tardanzas</h3>
                         <p className="stat-number">3</p>
@@ -51,21 +61,27 @@ const DashboardHome: React.FC = () => {
                     <h3>Actividad Reciente</h3>
                     <div className="activity-list">
                         <div className="activity-item">
-                            <span className="activity-icon">🟢</span>
+                            <span className="activity-icon activity-entry">
+                                <Icon name="log-in" size={18} color="#28a745" />
+                            </span>
                             <div className="activity-details">
                                 <p><strong>Juan Pérez</strong> registró entrada</p>
                                 <small>Hace 5 minutos</small>
                             </div>
                         </div>
                         <div className="activity-item">
-                            <span className="activity-icon">🔴</span>
+                            <span className="activity-icon activity-exit">
+                                <Icon name="log-out" size={18} color="#dc3545" />
+                            </span>
                             <div className="activity-details">
                                 <p><strong>María García</strong> registró salida</p>
                                 <small>Hace 15 minutos</small>
                             </div>
                         </div>
                         <div className="activity-item">
-                            <span className="activity-icon">📝</span>
+                            <span className="activity-icon activity-permit">
+                                <Icon name="file-plus" size={18} color="#667eea" />
+                            </span>
                             <div className="activity-details">
                                 <p><strong>Carlos López</strong> solicitó permiso</p>
                                 <small>Hace 1 hora</small>
@@ -79,15 +95,15 @@ const DashboardHome: React.FC = () => {
                         <h3>Acciones Rápidas</h3>
                         <div className="quick-actions">
                             <button className="action-btn">
-                                <span>➕</span>
+                                <Icon name="user-plus" size={20} />
                                 <span>Nuevo Personal</span>
                             </button>
                             <button className="action-btn">
-                                <span>📊</span>
+                                <Icon name="bar-chart-2" size={20} />
                                 <span>Generar Reporte</span>
                             </button>
                             <button className="action-btn">
-                                <span>✅</span>
+                                <Icon name="check-square" size={20} />
                                 <span>Aprobar Permisos</span>
                             </button>
                         </div>
@@ -134,7 +150,7 @@ const Dashboard: React.FC = () => {
                 path="/mi-perfil"
                 element={
                     <DashboardLayout title="Mi Perfil" subtitle="Información personal">
-                        <PlaceholderPage title="Mi Perfil" />
+                        <MiPerfilPage />
                     </DashboardLayout>
                 }
             />

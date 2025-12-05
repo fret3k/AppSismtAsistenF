@@ -37,6 +37,16 @@ export interface PersonalCreateDTO {
     password: string;
 }
 
+// DTO for partial updates (PATCH)
+export interface PersonalUpdateDTO {
+    nombre?: string;
+    apellido_paterno?: string;
+    apellido_materno?: string;
+    email?: string;
+    es_administrador?: boolean;
+    password?: string;
+}
+
 // Combined registration with face encoding
 export interface PersonalRegisterWithEncodingDTO {
     dni: string;
