@@ -23,7 +23,7 @@ const Notification: React.FC<NotificationProps> = ({ message, type, onClose }) =
     return (
         <div className={`notification-toast ${type}`}>
             <span className="notification-icon">
-                <Icon name={type === 'success' ? 'check-circle' : 'x-circle'} size={20} color="white" />
+                <Icon name={type === 'success' ? 'check-circle' : 'x-circle'} size={24} color="white" strokeWidth={2.5} />
             </span>
             <span>{message}</span>
         </div>
@@ -207,13 +207,13 @@ const MiPerfilPage: React.FC = () => {
                         </h2>
                         <p className="profile-email">{user.email}</p>
                         <span className={`profile-role ${user.es_administrador ? 'admin' : 'user'}`}>
-                            <Icon name={user.es_administrador ? 'shield' : 'user'} size={14} />
+                            <Icon name={user.es_administrador ? 'shield' : 'user'} size={18} strokeWidth={2.5} />
                             {user.es_administrador ? ' Administrador' : ' Usuario'}
                         </span>
                     </div>
                     {!isEditing && (
                         <button className="btn-edit" onClick={handleEdit}>
-                            <Icon name="edit-2" size={16} color="white" />
+                            <Icon name="edit-2" size={20} color="white" strokeWidth={2.5} />
                             Editar Perfil
                         </button>
                     )}
@@ -298,7 +298,7 @@ const MiPerfilPage: React.FC = () => {
                                 className="password-toggle"
                                 onClick={() => setShowPasswordFields(!showPasswordFields)}
                             >
-                                <Icon name="lock" size={16} />
+                                <Icon name="lock" size={20} strokeWidth={2.5} />
                                 {showPasswordFields ? ' Ocultar' : ' Cambiar'} Contraseña
                             </label>
 
@@ -338,7 +338,7 @@ const MiPerfilPage: React.FC = () => {
                                 onClick={handleCancel}
                                 disabled={isLoading}
                             >
-                                <Icon name="x" size={16} /> Cancelar
+                                <Icon name="x" size={20} strokeWidth={2.5} /> Cancelar
                             </button>
                             <button
                                 type="submit"
@@ -352,7 +352,7 @@ const MiPerfilPage: React.FC = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <Icon name="save" size={16} color="white" /> Guardar Cambios
+                                        <Icon name="save" size={20} color="white" strokeWidth={2.5} /> Guardar Cambios
                                     </>
                                 )}
                             </button>

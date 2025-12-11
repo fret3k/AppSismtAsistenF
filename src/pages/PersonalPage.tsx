@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { personalService } from '../services/personalService';
+import { ApiError } from '../services/api';
 import type { PersonalResponseDTO, PersonalCreateDTO } from '../types';
 import FaceCapture from '../components/FaceCapture';
 import './PersonalPage.css';
@@ -8,6 +9,7 @@ const PersonalPage: React.FC = () => {
     const [personal, setPersonal] = useState<PersonalResponseDTO[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [showFaceCapture, setShowFaceCapture] = useState(false);
     const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(null);
@@ -51,6 +53,7 @@ const PersonalPage: React.FC = () => {
 
         try {
             setError(null);
+            setSuccess(null);
 
             // Use the combined endpoint to register personal with face encoding in one call
             const response = await personalService.registerWithEncoding({
@@ -65,6 +68,9 @@ const PersonalPage: React.FC = () => {
             });
 
             console.log('Personal registered successfully:', response);
+
+            // Show success message
+            setSuccess(`✅ Personal "${formData.nombre} ${formData.apellido_paterno}" registrado exitosamente.`);
 
             // Reset form
             setShowCreateForm(false);
@@ -81,20 +87,60 @@ const PersonalPage: React.FC = () => {
             setFaceImageUrl(null);
 
             loadPersonal();
+
+            // Auto-hide success message after 5 seconds
+            setTimeout(() => setSuccess(null), 5000);
         } catch (err) {
             console.error('Error creating personal:', err);
 
-            // Check if it's a duplicate DNI or email error
-            const errorMessage = err instanceof Error ? err.message : String(err);
-
-            if (errorMessage.includes('personal_dni_key') || errorMessage.includes('dni')) {
-                setError(`❌ El DNI "${formData.dni}" ya está registrado. Por favor, usa un DNI diferente.`);
-            } else if (errorMessage.includes('personal_email_key') || errorMessage.includes('email')) {
-                setError(`❌ El email "${formData.email}" ya está registrado. Por favor, usa un email diferente.`);
+            // Handle ApiError with detailed validation errors
+            if (err instanceof ApiError) {
+                if (err.errores && err.errores.length > 0) {
+                    // Format validation errors for display
+                    const errorMessages = err.errores.map(e => {
+                        const fieldName = formatFieldName(e.campo);
+                        return `• ${fieldName}: ${translateErrorMessage(e.mensaje)}`;
+                    }).join('\n');
+                    setError(`❌ Errores de validación:\n${errorMessages}`);
+                } else if (err.detail.includes('dni') || err.detail.includes('personal_dni_key')) {
+                    setError(`❌ El DNI "${formData.dni}" ya está registrado. Por favor, usa un DNI diferente.`);
+                } else if (err.detail.includes('email') || err.detail.includes('personal_email_key')) {
+                    setError(`❌ El email "${formData.email}" ya está registrado. Por favor, usa un email diferente.`);
+                } else {
+                    setError(`❌ ${err.detail}`);
+                }
             } else {
                 setError('❌ Error al crear el personal. Verifica que todos los datos sean correctos.');
             }
         }
+    };
+
+    // Helper function to format field names for display
+    const formatFieldName = (campo: string): string => {
+        const fieldName = campo.replace('body -> ', '').replace('body->', '');
+        const fieldMap: Record<string, string> = {
+            'dni': 'DNI',
+            'nombre': 'Nombre',
+            'apellido_paterno': 'Apellido Paterno',
+            'apellido_materno': 'Apellido Materno',
+            'email': 'Email',
+            'password': 'Contraseña',
+            'es_administrador': 'Es Administrador',
+            'embedding': 'Codificación Facial',
+        };
+        return fieldMap[fieldName] || fieldName;
+    };
+
+    // Helper function to translate common error messages to Spanish
+    const translateErrorMessage = (mensaje: string): string => {
+        const translations: Record<string, string> = {
+            'value is not a valid email address': 'No es una dirección de email válida',
+            'field required': 'Este campo es requerido',
+            'ensure this value has at least 8 characters': 'Debe tener al menos 8 caracteres',
+            'value is not a valid integer': 'Debe ser un número entero válido',
+            'value is not a valid float': 'Debe ser un número válido',
+        };
+        return translations[mensaje] || mensaje;
     };
 
     const handleFaceDetected = (descriptor: Float32Array, imageUrl: string) => {
@@ -139,8 +185,15 @@ const PersonalPage: React.FC = () => {
 
             {error && (
                 <div className="alert alert-error">
-                    {error}
+                    <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{error}</pre>
                     <button onClick={() => setError(null)}>✕</button>
+                </div>
+            )}
+
+            {success && (
+                <div className="alert alert-success">
+                    {success}
+                    <button onClick={() => setSuccess(null)}>✕</button>
                 </div>
             )}
 

@@ -153,7 +153,7 @@ const ConfiguracionPage: React.FC = () => {
             <div className="config-section">
                 <h3 className="section-title">
                     <span className="section-icon">
-                        <Icon name="camera" size={22} />
+                        <Icon name="camera" size={26} strokeWidth={2.5} />
                     </span>
                     Reconocimiento Facial
                 </h3>
@@ -217,7 +217,7 @@ const ConfiguracionPage: React.FC = () => {
             <div className="config-section">
                 <h3 className="section-title">
                     <span className="section-icon">
-                        <Icon name="clock" size={22} />
+                        <Icon name="clock" size={26} strokeWidth={2.5} />
                     </span>
                     Horarios de Trabajo
                 </h3>
@@ -229,10 +229,10 @@ const ConfiguracionPage: React.FC = () => {
                     </div>
                 ) : horariosError && !horarios ? (
                     <div className="horarios-error">
-                        <Icon name="alert-circle" size={20} />
+                        <Icon name="alert-circle" size={24} strokeWidth={2.5} />
                         <span>{horariosError}</span>
                         <button onClick={loadHorarios} className="btn-retry">
-                            <Icon name="refresh-cw" size={14} /> Reintentar
+                            <Icon name="refresh-cw" size={18} strokeWidth={2.5} /> Reintentar
                         </button>
                     </div>
                 ) : (
@@ -241,13 +241,13 @@ const ConfiguracionPage: React.FC = () => {
                             {/* Turno Mañana */}
                             <div className="horario-group">
                                 <h4 className="horario-group-title">
-                                    <Icon name="sunrise" size={18} /> Turno Mañana
+                                    <Icon name="sunrise" size={22} strokeWidth={2.5} /> Turno Mañana
                                 </h4>
                                 <div className="horario-grid">
                                     {/* Entrada Mañana */}
                                     <div className="horario-column">
                                         <div className="horario-column-title">
-                                            <Icon name="log-in" size={16} color="#28a745" /> Entrada
+                                            <Icon name="log-in" size={20} color="#28a745" strokeWidth={2.5} /> Entrada
                                         </div>
                                         <div className="horario-field">
                                             <label>A tiempo hasta</label>
@@ -269,7 +269,7 @@ const ConfiguracionPage: React.FC = () => {
                                     {/* Salida Mañana */}
                                     <div className="horario-column">
                                         <div className="horario-column-title">
-                                            <Icon name="log-out" size={16} color="#dc3545" /> Salida
+                                            <Icon name="log-out" size={20} color="#dc3545" strokeWidth={2.5} /> Salida
                                         </div>
                                         <div className="horario-field">
                                             <label>Límite temprano</label>
@@ -286,13 +286,13 @@ const ConfiguracionPage: React.FC = () => {
                             {/* Turno Tarde */}
                             <div className="horario-group">
                                 <h4 className="horario-group-title">
-                                    <Icon name="sunset" size={18} /> Turno Tarde
+                                    <Icon name="sunset" size={22} strokeWidth={2.5} /> Turno Tarde
                                 </h4>
                                 <div className="horario-grid">
                                     {/* Entrada Tarde */}
                                     <div className="horario-column">
                                         <div className="horario-column-title">
-                                            <Icon name="log-in" size={16} color="#28a745" /> Entrada
+                                            <Icon name="log-in" size={20} color="#28a745" strokeWidth={2.5} /> Entrada
                                         </div>
                                         <div className="horario-field">
                                             <label>A tiempo hasta</label>
@@ -314,7 +314,7 @@ const ConfiguracionPage: React.FC = () => {
                                     {/* Salida Tarde */}
                                     <div className="horario-column">
                                         <div className="horario-column-title">
-                                            <Icon name="log-out" size={16} color="#dc3545" /> Salida
+                                            <Icon name="log-out" size={20} color="#dc3545" strokeWidth={2.5} /> Salida
                                         </div>
                                         <div className="horario-field">
                                             <label>Límite temprano</label>
@@ -332,12 +332,12 @@ const ConfiguracionPage: React.FC = () => {
                         <div className="horarios-actions">
                             {horariosError && (
                                 <span className="error-message">
-                                    <Icon name="x-circle" size={16} /> {horariosError}
+                                    <Icon name="x-circle" size={20} strokeWidth={2.5} /> {horariosError}
                                 </span>
                             )}
                             {horariosSuccess && (
                                 <span className="success-message">
-                                    <Icon name="check-circle" size={16} /> Horarios guardados correctamente
+                                    <Icon name="check-circle" size={20} strokeWidth={2.5} /> Horarios guardados correctamente
                                 </span>
                             )}
                             <button
@@ -352,7 +352,7 @@ const ConfiguracionPage: React.FC = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <Icon name="save" size={18} color="white" /> Guardar Horarios
+                                        <Icon name="save" size={22} color="white" strokeWidth={2.5} /> Guardar Horarios
                                     </>
                                 )}
                             </button>
@@ -364,7 +364,7 @@ const ConfiguracionPage: React.FC = () => {
             {/* Toast de guardado */}
             {saved && (
                 <div className="save-toast">
-                    <Icon name="check" size={16} color="white" /> Configuración guardada
+                    <Icon name="check" size={20} color="white" strokeWidth={3} /> Configuración guardada
                 </div>
             )}
         </div>

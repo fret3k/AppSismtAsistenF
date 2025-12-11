@@ -81,12 +81,37 @@
     border: 1px solid #fcc;
 }
 
+.alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+    border: 1px solid #b1dfbb;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .alert button {
     background: transparent;
     border: none;
     font-size: 1.2rem;
     cursor: pointer;
     color: inherit;
+    flex-shrink: 0;
+}
+
+.alert pre {
+    font-family: inherit;
+    margin: 0;
 }
 
 /* Loading */

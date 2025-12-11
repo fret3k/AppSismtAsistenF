@@ -111,7 +111,7 @@ const Login: React.FC = () => {
                             />
                             <span>Recordar sesión</span>
                         </label>
-                        <a href="#" className="forgot-password">¿Olvidó su contraseña?</a>
+                        <Link to="/forgot-password" className="forgot-password">¿Olvidó su contraseña?</Link>
                     </div>
 
                     <button type="submit" className="btn-login" disabled={loading}>

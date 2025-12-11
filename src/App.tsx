@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import FaceAttendance from './components/FaceAttendance';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 
 // Protected Route Component
@@ -21,6 +23,8 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<><Navbar /><FaceAttendance /></>} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route
         path="/dashboard/*"
         element={

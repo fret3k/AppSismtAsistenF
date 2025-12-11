@@ -17,7 +17,7 @@ const DashboardHome: React.FC = () => {
             <div className="dashboard-grid">
                 <div className="stat-card">
                     <div className="stat-icon">
-                        <Icon name="users" size={28} />
+                        <Icon name="users" size={32} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Personal Activo</h3>
@@ -27,7 +27,7 @@ const DashboardHome: React.FC = () => {
 
                 <div className="stat-card">
                     <div className="stat-icon">
-                        <Icon name="check-circle" size={28} />
+                        <Icon name="check-circle" size={32} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Asistencias Hoy</h3>
@@ -37,7 +37,7 @@ const DashboardHome: React.FC = () => {
 
                 <div className="stat-card">
                     <div className="stat-icon">
-                        <Icon name="file-text" size={28} />
+                        <Icon name="file-text" size={32} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Permisos Pendientes</h3>
@@ -47,7 +47,7 @@ const DashboardHome: React.FC = () => {
 
                 <div className="stat-card">
                     <div className="stat-icon">
-                        <Icon name="clock" size={28} />
+                        <Icon name="clock" size={32} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Tardanzas</h3>
@@ -62,7 +62,7 @@ const DashboardHome: React.FC = () => {
                     <div className="activity-list">
                         <div className="activity-item">
                             <span className="activity-icon activity-entry">
-                                <Icon name="log-in" size={18} color="#28a745" />
+                                <Icon name="log-in" size={22} color="#28a745" strokeWidth={2.5} />
                             </span>
                             <div className="activity-details">
                                 <p><strong>Juan Pérez</strong> registró entrada</p>
@@ -71,7 +71,7 @@ const DashboardHome: React.FC = () => {
                         </div>
                         <div className="activity-item">
                             <span className="activity-icon activity-exit">
-                                <Icon name="log-out" size={18} color="#dc3545" />
+                                <Icon name="log-out" size={22} color="#dc3545" strokeWidth={2.5} />
                             </span>
                             <div className="activity-details">
                                 <p><strong>María García</strong> registró salida</p>
@@ -80,7 +80,7 @@ const DashboardHome: React.FC = () => {
                         </div>
                         <div className="activity-item">
                             <span className="activity-icon activity-permit">
-                                <Icon name="file-plus" size={18} color="#667eea" />
+                                <Icon name="file-plus" size={22} color="#667eea" strokeWidth={2.5} />
                             </span>
                             <div className="activity-details">
                                 <p><strong>Carlos López</strong> solicitó permiso</p>
@@ -95,15 +95,15 @@ const DashboardHome: React.FC = () => {
                         <h3>Acciones Rápidas</h3>
                         <div className="quick-actions">
                             <button className="action-btn">
-                                <Icon name="user-plus" size={20} />
+                                <Icon name="user-plus" size={24} strokeWidth={2.5} />
                                 <span>Nuevo Personal</span>
                             </button>
                             <button className="action-btn">
-                                <Icon name="bar-chart-2" size={20} />
+                                <Icon name="bar-chart-2" size={24} strokeWidth={2.5} />
                                 <span>Generar Reporte</span>
                             </button>
                             <button className="action-btn">
-                                <Icon name="check-square" size={20} />
+                                <Icon name="check-square" size={24} strokeWidth={2.5} />
                                 <span>Aprobar Permisos</span>
                             </button>
                         </div>

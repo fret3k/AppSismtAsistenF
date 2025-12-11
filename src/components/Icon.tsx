@@ -44,7 +44,7 @@ const iconCache: Record<string, string> = {};
 
 const Icon: React.FC<IconProps> = ({
     name,
-    size = 20,
+    size = 24,  // Increased default size from 20 to 24
     color = 'currentColor',
     strokeWidth = 2,
     className = ''
@@ -53,9 +53,11 @@ const Icon: React.FC<IconProps> = ({
 
     React.useEffect(() => {
         const loadIcon = async () => {
-            // Check cache first
-            if (iconCache[name]) {
-                setSvgContent(iconCache[name]);
+            // Create cache key with all relevant params
+            const cacheKey = `${name}-${size}-${color}-${strokeWidth}`;
+
+            if (iconCache[cacheKey]) {
+                setSvgContent(iconCache[cacheKey]);
                 return;
             }
 
@@ -73,9 +75,11 @@ const Icon: React.FC<IconProps> = ({
                     svg.setAttribute('height', String(size));
                     svg.setAttribute('stroke', color);
                     svg.setAttribute('stroke-width', String(strokeWidth));
+                    svg.style.minWidth = `${size}px`;
+                    svg.style.minHeight = `${size}px`;
 
                     const content = svg.outerHTML;
-                    iconCache[name] = content;
+                    iconCache[cacheKey] = content;
                     setSvgContent(content);
                 }
             } catch (error) {
@@ -95,7 +99,10 @@ const Icon: React.FC<IconProps> = ({
                 justifyContent: 'center',
                 width: size,
                 height: size,
-                color: color
+                minWidth: size,
+                minHeight: size,
+                color: color,
+                flexShrink: 0
             }}
             dangerouslySetInnerHTML={{ __html: svgContent }}
         />

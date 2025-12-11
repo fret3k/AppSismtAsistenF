@@ -65,7 +65,7 @@ const Sidebar: React.FC = () => {
     return (
         <>
             <button className="sidebar-toggle" onClick={toggleSidebar}>
-                <Icon name="menu" size={24} color="white" />
+                <Icon name="menu" size={28} color="white" />
             </button>
 
             <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
@@ -102,7 +102,7 @@ const Sidebar: React.FC = () => {
                                         onClick={() => setIsOpen(false)}
                                     >
                                         <span className="menu-icon">
-                                            <Icon name={item.icon} size={20} color="white" />
+                                            <Icon name={item.icon} size={22} color="white" strokeWidth={2.5} />
                                         </span>
                                         <span className="menu-text">{item.text}</span>
                                     </Link>
@@ -128,7 +128,7 @@ const Sidebar: React.FC = () => {
                     </div>
 
                     <button className="logout-btn" onClick={logout}>
-                        <Icon name="log-out" size={18} color="white" />
+                        <Icon name="log-out" size={20} color="white" strokeWidth={2.5} />
                         <span>Cerrar Sesión</span>
                     </button>
 
