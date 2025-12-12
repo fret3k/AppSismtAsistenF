@@ -78,6 +78,18 @@ const Sidebar: React.FC = () => {
                 </div>
 
                 <nav className="sidebar-menu">
+                    {/* Botón de Inicio para volver a la página principal */}
+                    <Link
+                        to="/"
+                        className={`menu-item ${isActive('/') ? 'active' : ''}`}
+                        onClick={() => setIsOpen(false)}
+                    >
+                        <span className="menu-icon">
+                            <Icon name="home" size={22} color="white" strokeWidth={2.5} />
+                        </span>
+                        <span className="menu-text">Inicio</span>
+                    </Link>
+
                     {menuItems.map((section, idx) => {
                         // Filter items based on user role
                         const visibleItems = section.items.filter((item) => {

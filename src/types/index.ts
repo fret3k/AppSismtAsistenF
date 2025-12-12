@@ -65,6 +65,10 @@ export interface PersonalRegisterWithEncodingResponse {
     message: string;
 }
 
+export interface PersonalUpdateWithEncodingDTO extends PersonalUpdateDTO {
+    embedding?: number[]; // Optional new face encoding
+}
+
 // Alias for backward compatibility
 export type Personal = PersonalResponseDTO;
 
@@ -83,14 +87,14 @@ export interface User {
 export interface EncodingFaceResponseDTO {
     id: string; // UUID
     personal_id: string; // UUID
-    vector: number[];
+    embedding: number[];
     embedding_model: string;
     version: string;
 }
 
 export interface EncodingFaceCreateDTO {
     personal_id: string; // UUID
-    vector: number[];
+    embedding: number[];
     embedding_model?: string;
     version?: string;
 }

@@ -3,6 +3,7 @@ import { personalService } from '../services/personalService';
 import { ApiError } from '../services/api';
 import type { PersonalResponseDTO, PersonalCreateDTO } from '../types';
 import FaceCapture from '../components/FaceCapture';
+import Icon from '../components/Icon';
 import './PersonalPage.css';
 
 const PersonalPage: React.FC = () => {
@@ -10,7 +11,10 @@ const PersonalPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
-    const [showCreateForm, setShowCreateForm] = useState(false);
+
+    const [showForm, setShowForm] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [showFaceCapture, setShowFaceCapture] = useState(false);
     const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(null);
     const [faceImageUrl, setFaceImageUrl] = useState<string | null>(null);
@@ -43,10 +47,50 @@ const PersonalPage: React.FC = () => {
         }
     };
 
-    const handleCreate = async (e: React.FormEvent) => {
+    const resetForm = () => {
+        setFormData({
+            dni: '',
+            nombre: '',
+            apellido_paterno: '',
+            apellido_materno: '',
+            email: '',
+            password: '',
+            es_administrador: false,
+        });
+        setFaceDescriptor(null);
+        setFaceImageUrl(null);
+        setIsEditing(false);
+        setEditingId(null);
+        setShowForm(false);
+    };
+
+    const handleEdit = (p: PersonalResponseDTO) => {
+        setFormData({
+            dni: p.dni,
+            nombre: p.nombre,
+            apellido_paterno: p.apellido_paterno,
+            apellido_materno: p.apellido_materno,
+            email: p.email,
+            password: '', // Password is not returned by API, standard practice to leave blank on edit unless changing
+            es_administrador: p.es_administrador,
+        });
+        // We don't fetch the face image/encoding for display as it's not easily compatible with a simple image URL 
+        // without decoding the vector or having a separate image store. 
+        // We will assume if they want to update the face, they will capture a new one.
+        setFaceDescriptor(null);
+        setFaceImageUrl(null);
+
+        setIsEditing(true);
+        setEditingId(p.id);
+        setShowForm(true);
+        window.scrollTo(0, 0);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!faceDescriptor) {
+        // Validation for Create mode
+        if (!isEditing && !faceDescriptor) {
             setError('Debes capturar una foto del rostro antes de crear el personal');
             return;
         }
@@ -55,44 +99,47 @@ const PersonalPage: React.FC = () => {
             setError(null);
             setSuccess(null);
 
-            // Use the combined endpoint to register personal with face encoding in one call
-            const response = await personalService.registerWithEncoding({
-                dni: formData.dni,
-                nombre: formData.nombre,
-                apellido_paterno: formData.apellido_paterno,
-                apellido_materno: formData.apellido_materno,
-                email: formData.email,
-                password: formData.password,
-                es_administrador: formData.es_administrador,
-                embedding: Array.from(faceDescriptor), // Convert Float32Array to regular array
-            });
+            if (isEditing && editingId) {
+                // Update mode
+                const updateData: any = {
+                    ...formData,
+                };
 
-            console.log('Personal registered successfully:', response);
+                // Only include password if it was entered
+                if (!formData.password) {
+                    delete updateData.password;
+                }
 
-            // Show success message
-            setSuccess(`✅ Personal "${formData.nombre} ${formData.apellido_paterno}" registrado exitosamente.`);
+                // Include embedding if captured
+                if (faceDescriptor) {
+                    updateData.embedding = Array.from(faceDescriptor);
+                }
+
+                await personalService.updateWithEncoding(editingId, updateData);
+                setSuccess(`✅ Personal "${formData.nombre}" actualizado exitosamente.`);
+            } else {
+                // Create mode
+                await personalService.registerWithEncoding({
+                    dni: formData.dni,
+                    nombre: formData.nombre,
+                    apellido_paterno: formData.apellido_paterno,
+                    apellido_materno: formData.apellido_materno,
+                    email: formData.email,
+                    password: formData.password,
+                    es_administrador: formData.es_administrador,
+                    embedding: Array.from(faceDescriptor!), // Assert non-null because of check above
+                });
+                setSuccess(`✅ Personal "${formData.nombre}" registrado exitosamente.`);
+            }
 
             // Reset form
-            setShowCreateForm(false);
-            setFormData({
-                dni: '',
-                nombre: '',
-                apellido_paterno: '',
-                apellido_materno: '',
-                email: '',
-                password: '',
-                es_administrador: false,
-            });
-            setFaceDescriptor(null);
-            setFaceImageUrl(null);
-
+            resetForm();
             loadPersonal();
 
             // Auto-hide success message after 5 seconds
             setTimeout(() => setSuccess(null), 5000);
         } catch (err) {
-            console.error('Error creating personal:', err);
-
+            console.error('Error saving personal:', err);
             // Handle ApiError with detailed validation errors
             if (err instanceof ApiError) {
                 if (err.errores && err.errores.length > 0) {
@@ -110,7 +157,7 @@ const PersonalPage: React.FC = () => {
                     setError(`❌ ${err.detail}`);
                 }
             } else {
-                setError('❌ Error al crear el personal. Verifica que todos los datos sean correctos.');
+                setError('❌ Error al guardar el personal. Verifica que todos los datos sean correctos.');
             }
         }
     };
@@ -178,8 +225,18 @@ const PersonalPage: React.FC = () => {
         <div className="personal-page">
             <div className="page-header">
                 <h1>Gestión de Personal</h1>
-                <button className="btn-primary" onClick={() => setShowCreateForm(!showCreateForm)}>
-                    {showCreateForm ? 'Cancelar' : '+ Nuevo Personal'}
+                <button
+                    className="btn-primary"
+                    onClick={() => {
+                        if (showForm) {
+                            resetForm();
+                        } else {
+                            resetForm(); // Clear any previous edit state
+                            setShowForm(true);
+                        }
+                    }}
+                >
+                    {showForm ? 'Cancelar' : '+ Nuevo Personal'}
                 </button>
             </div>
 
@@ -197,10 +254,10 @@ const PersonalPage: React.FC = () => {
                 </div>
             )}
 
-            {showCreateForm && (
+            {showForm && (
                 <div className="create-form-card">
-                    <h2>Crear Nuevo Personal</h2>
-                    <form onSubmit={handleCreate}>
+                    <h2>{isEditing ? 'Editar Personal' : 'Crear Nuevo Personal'}</h2>
+                    <form onSubmit={handleSubmit}>
                         <div className="form-row">
                             <div className="form-group">
                                 <label>DNI *</label>
@@ -254,13 +311,13 @@ const PersonalPage: React.FC = () => {
 
                         <div className="form-row">
                             <div className="form-group">
-                                <label>Contraseña * (mínimo 8 caracteres)</label>
+                                <label>Contraseña {isEditing ? '(Dejar en blanco para mantener)' : '* (mínimo 8 caracteres)'}</label>
                                 <input
                                     type="password"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    minLength={8}
-                                    required
+                                    minLength={isEditing ? undefined : 8}
+                                    required={!isEditing}
                                 />
                             </div>
                             <div className="form-group">
@@ -277,7 +334,7 @@ const PersonalPage: React.FC = () => {
 
                         {/* Face Capture Section */}
                         <div className="face-capture-section">
-                            <h3>📸 Captura de Rostro *</h3>
+                            <h3>📸 Captura de Rostro {isEditing ? '(Opcional)' : '*'}</h3>
                             {!faceImageUrl ? (
                                 <div className="no-face-captured">
                                     <p>No se ha capturado ningún rostro</p>
@@ -299,7 +356,8 @@ const PersonalPage: React.FC = () => {
                                             className="btn-secondary"
                                             onClick={handleRemoveFace}
                                         >
-                                            🔄 Capturar Nuevo Rostro
+
+                                            🔄 {isEditing ? 'Cambiar Rostro' : 'Capturar Nuevo Rostro'}
                                         </button>
                                     </div>
                                 </div>
@@ -307,11 +365,11 @@ const PersonalPage: React.FC = () => {
                         </div>
 
                         <div className="form-actions">
-                            <button type="button" className="btn-secondary" onClick={() => setShowCreateForm(false)}>
+                            <button type="button" className="btn-secondary" onClick={resetForm}>
                                 Cancelar
                             </button>
                             <button type="submit" className="btn-primary">
-                                Crear Personal
+                                {isEditing ? 'Guardar Cambios' : 'Crear Personal'}
                             </button>
                         </div>
                     </form>
@@ -344,11 +402,19 @@ const PersonalPage: React.FC = () => {
                                     </td>
                                     <td>
                                         <button
+                                            className="btn-edit"
+                                            onClick={() => handleEdit(p)}
+                                            title="Editar"
+                                            style={{ marginRight: '8px', background: 'none', border: 'none', cursor: 'pointer' }}
+                                        >
+                                            <Icon name="edit" size={20} color="#007bff" />
+                                        </button>
+                                        <button
                                             className="btn-delete"
                                             onClick={() => handleDelete(p.id)}
                                             title="Eliminar"
                                         >
-                                            🗑️
+                                            <Icon name="trash-2" size={20} color="#dc3545" />
                                         </button>
                                     </td>
                                 </tr>
