@@ -100,12 +100,46 @@ export interface EncodingFaceCreateDTO {
 }
 
 // ============ Asistencia Types ============
+// ============ Asistencia Types ============
 export interface RegistrarAsistenciaDTO {
     personal_id: string; // UUID
     reconocimiento_valido: boolean;
     motivo?: string | null;
+    tipo_registro?: 'ENTRADA_M' | 'SALIDA_M' | 'ENTRADA_T' | 'SALIDA_T';
 }
 
+export interface AsistenciaRecordDTO {
+    id: string; // UUID
+    personal_id: string;
+    fecha: string;
+    marca_tiempo: string;
+    tipo_registro: 'ENTRADA_M' | 'SALIDA_M' | 'ENTRADA_T' | 'SALIDA_T';
+    estado: 'A TIEMPO' | 'TARDE' | 'SALIDA_ANTICIPADA' | 'OMISION';
+    motivo?: string | null;
+}
+
+export interface PersonalStatusDTO {
+    id: string;
+    dni: string;
+    nombre_completo: string;
+    estado_dia: 'PRESENTE' | 'AUSENTE';
+    ultima_marcacion: string | null;
+    horas_trabajadas: number;
+    registros: AsistenciaRecordDTO[];
+}
+
+export interface HistorialAsistenciaDTO extends AsistenciaRecordDTO {
+    nombre_personal: string;
+    dni: string;
+}
+
+export interface EstadisticasDiaDTO {
+    total_personal: number;
+    presentes: number;
+    ausentes: number;
+    tardanzas: number;
+}
+// Deprecated but kept for compatibility if needed elsewhere temporarily
 export interface Asistencia {
     id: number;
     personal_id: string;

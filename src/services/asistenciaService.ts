@@ -1,11 +1,39 @@
 import { apiRequest } from './api';
-import type { Asistencia, RegistrarAsistenciaDTO } from '../types';
+import type {
+    PersonalStatusDTO,
+    HistorialAsistenciaDTO,
+    EstadisticasDiaDTO,
+    RegistrarAsistenciaDTO
+} from '../types';
 
-// Asistencia Service - Operations for attendance management
 export const asistenciaService = {
-    // Register new asistencia - POST /asistencia/registrar
-    async registrar(data: RegistrarAsistenciaDTO): Promise<void> {
-        await apiRequest<void>(
+    // GET /asistencia/personal?fecha={fecha}
+    // Lista el estado de todo el personal para un día específico
+    async getPersonalStatus(fecha?: string): Promise<PersonalStatusDTO[]> {
+        const query = fecha ? `?fecha=${fecha}` : '';
+        return await apiRequest<PersonalStatusDTO[]>(`/asistencia/personal${query}`, {}, true);
+    },
+
+    // GET /asistencia/historial?fecha_inicio={start}&fecha_fin={end}&personal_id={id}
+    // Obtiene el historial detallado
+    async getHistorial(fechaInicio: string, fechaFin: string, personalId?: string): Promise<HistorialAsistenciaDTO[]> {
+        let query = `?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+        if (personalId) {
+            query += `&personal_id=${personalId}`;
+        }
+        return await apiRequest<HistorialAsistenciaDTO[]>(`/asistencia/historial${query}`, {}, true);
+    },
+
+    // GET /asistencia/estadisticas?fecha={fecha}
+    async getEstadisticas(fecha?: string): Promise<EstadisticasDiaDTO> {
+        const query = fecha ? `?fecha=${fecha}` : '';
+        return await apiRequest<EstadisticasDiaDTO>(`/asistencia/estadisticas${query}`, {}, true);
+    },
+
+    // POST /asistencia/registrar
+    // Marcación manual
+    async registrarManual(data: RegistrarAsistenciaDTO): Promise<any> {
+        return await apiRequest<any>(
             '/asistencia/registrar',
             {
                 method: 'POST',
@@ -13,24 +41,5 @@ export const asistenciaService = {
             },
             true
         );
-    },
-
-    // Get all asistencias (if endpoint exists in the future)
-    async getAll(): Promise<Asistencia[]> {
-        return await apiRequest<Asistencia[]>('/asistencias', {}, true);
-    },
-
-    // Get asistencias by personal ID (if endpoint exists in the future)
-    async getByPersonalId(personalId: string): Promise<Asistencia[]> {
-        return await apiRequest<Asistencia[]>(`/asistencias/personal/${personalId}`, {}, true);
-    },
-
-    // Get asistencias by date range (if endpoint exists in the future)
-    async getByDateRange(startDate: string, endDate: string): Promise<Asistencia[]> {
-        return await apiRequest<Asistencia[]>(
-            `/asistencias?start_date=${startDate}&end_date=${endDate}`,
-            {},
-            true
-        );
-    },
+    }
 };

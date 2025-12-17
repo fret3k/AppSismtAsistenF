@@ -18,21 +18,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
-// Home Route Component - redirects to login if not authenticated
+// Home Route Component - public access
 const HomeRoute: React.FC = () => {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return <div>Cargando...</div>;
-  }
-
-  return isAuthenticated ? (
+  return (
     <>
       <Navbar />
       <FaceAttendance />
     </>
-  ) : (
-    <Navigate to="/login" />
   );
 };
 

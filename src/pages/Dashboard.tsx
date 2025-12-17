@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
@@ -6,52 +6,68 @@ import PersonalPage from './PersonalPage';
 import ConfiguracionPage from './ConfiguracionPage';
 import MiPerfilPage from './MiPerfilPage';
 import Icon from '../components/Icon';
+import AsistenciasPage from './AsistenciasPage';
 import './Dashboard.css';
+import { asistenciaService } from '../services/asistenciaService';
+import type { EstadisticasDiaDTO } from '../types';
 
 // Dashboard Home Component
 const DashboardHome: React.FC = () => {
     const { isAdmin } = useAuth();
+    const [stats, setStats] = useState<EstadisticasDiaDTO | null>(null);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await asistenciaService.getEstadisticas();
+                setStats(data);
+            } catch (error) {
+                console.error("Error fetching dashboard stats", error);
+            }
+        };
+        fetchStats();
+    }, []);
 
     return (
         <>
             <div className="dashboard-grid">
                 <div className="stat-card">
-                    <div className="stat-icon">
+                    <div className="stat-icon" style={{ backgroundColor: '#e3f2fd', color: '#1976d2' }}>
                         <Icon name="users" size={32} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
-                        <h3>Personal Activo</h3>
-                        <p className="stat-number">45</p>
+                        <h3>Total Personal</h3>
+                        <p className="stat-number">{stats?.total_personal || 0}</p>
                     </div>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">
+                    <div className="stat-icon" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
                         <Icon name="check-circle" size={32} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
-                        <h3>Asistencias Hoy</h3>
-                        <p className="stat-number">38</p>
+                        <h3>Presentes</h3>
+                        <p className="stat-number">{stats?.presentes || 0}</p>
                     </div>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">
-                        <Icon name="file-text" size={32} strokeWidth={2.5} />
+                    <div className="stat-icon" style={{ backgroundColor: '#ffebee', color: '#c62828' }}>
+                        <Icon name="x" size={32} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
-                        <h3>Permisos Pendientes</h3>
-                        <p className="stat-number">{isAdmin ? '5' : '2'}</p>
+                        <h3>Ausentes</h3>
+                        <p className="stat-number">{stats?.ausentes || 0}</p>
                     </div>
                 </div>
 
                 <div className="stat-card">
-                    <div className="stat-icon">
+                    <div className="stat-icon" style={{ backgroundColor: '#fff3e0', color: '#ef6c00' }}>
                         <Icon name="clock" size={32} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Tardanzas</h3>
-                        <p className="stat-number">3</p>
+                        <p className="stat-number">{stats?.tardanzas || 0}</p>
                     </div>
                 </div>
             </div>
@@ -154,11 +170,12 @@ const Dashboard: React.FC = () => {
                     </DashboardLayout>
                 }
             />
+
             <Route
                 path="/asistencias"
                 element={
-                    <DashboardLayout title="Registro de Asistencias" subtitle="Registra tu asistencia">
-                        <PlaceholderPage title="Registro de Asistencias" />
+                    <DashboardLayout title="Registro y Control" subtitle="Gestión de asistencia y personal">
+                        <AsistenciasPage />
                     </DashboardLayout>
                 }
             />
