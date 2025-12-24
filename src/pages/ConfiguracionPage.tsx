@@ -8,13 +8,15 @@ interface AppSettings {
     requireSmile: boolean;
     smileThreshold: number;
     autoRegister: boolean;
+    showRecentAttendances: boolean;  // Nueva opción
 }
 
 // Valores por defecto
 const defaultSettings: AppSettings = {
     requireSmile: true,
     smileThreshold: 0.7,
-    autoRegister: true
+    autoRegister: true,
+    showRecentAttendances: true  // Mostrar por defecto
 };
 
 // Valores por defecto para horarios
@@ -207,6 +209,23 @@ const ConfiguracionPage: React.FC = () => {
                             type="checkbox"
                             checked={settings.autoRegister}
                             onChange={() => handleToggle('autoRegister')}
+                        />
+                        <span className="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div className="config-item">
+                    <div className="config-info">
+                        <label>Mostrar Historial de Asistencias</label>
+                        <p className="config-description">
+                            Mostrar las últimas 5 asistencias registradas en la pantalla de reconocimiento facial.
+                        </p>
+                    </div>
+                    <label className="toggle-switch">
+                        <input
+                            type="checkbox"
+                            checked={settings.showRecentAttendances}
+                            onChange={() => handleToggle('showRecentAttendances')}
                         />
                         <span className="toggle-slider"></span>
                     </label>

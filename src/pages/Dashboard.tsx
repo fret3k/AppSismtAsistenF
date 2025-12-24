@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 import PersonalPage from './PersonalPage';
@@ -7,6 +7,7 @@ import ConfiguracionPage from './ConfiguracionPage';
 import MiPerfilPage from './MiPerfilPage';
 import Icon from '../components/Icon';
 import AsistenciasPage from './AsistenciasPage';
+import PermisosPage from './PermisosPage';
 import './Dashboard.css';
 import { asistenciaService } from '../services/asistenciaService';
 import type { EstadisticasDiaDTO } from '../types';
@@ -14,26 +15,50 @@ import type { EstadisticasDiaDTO } from '../types';
 // Dashboard Home Component
 const DashboardHome: React.FC = () => {
     const { isAdmin } = useAuth();
+    const navigate = useNavigate();
     const [stats, setStats] = useState<EstadisticasDiaDTO | null>(null);
+    const [recentActivities, setRecentActivities] = useState<any[]>([]);
 
     useEffect(() => {
-        const fetchStats = async () => {
+        const loadDashboardData = async () => {
             try {
-                const data = await asistenciaService.getEstadisticas();
-                setStats(data);
+                const statsData = await asistenciaService.getEstadisticas();
+                setStats(statsData);
+
+                const recentData = await asistenciaService.getRecientes(5);
+                if (Array.isArray(recentData)) {
+                    setRecentActivities(recentData);
+                } else {
+                    setRecentActivities(recentData.asistencias || []);
+                }
             } catch (error) {
-                console.error("Error fetching dashboard stats", error);
+                console.error("Error fetching dashboard data", error);
             }
         };
-        fetchStats();
+        loadDashboardData();
     }, []);
+
+    const getStatusColor = (estado: string) => {
+        const e = estado?.toUpperCase() || '';
+        if (e === 'A TIEMPO' || e === 'NORMAL') return '#28a745';
+        if (e === 'TARDE') return '#fd7e14';
+        if (e === 'FALTA') return '#dc3545';
+        return '#6c757d';
+    };
+
+    const getStatusIcon = (estado: string) => {
+        const e = estado?.toUpperCase() || '';
+        if (e === 'A TIEMPO' || e === 'NORMAL') return 'check-circle';
+        if (e === 'TARDE') return 'alert-circle';
+        return 'clock';
+    };
 
     return (
         <>
             <div className="dashboard-grid">
                 <div className="stat-card">
                     <div className="stat-icon" style={{ backgroundColor: '#e3f2fd', color: '#1976d2' }}>
-                        <Icon name="users" size={32} strokeWidth={2.5} />
+                        <Icon name="users" size={24} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Total Personal</h3>
@@ -43,7 +68,7 @@ const DashboardHome: React.FC = () => {
 
                 <div className="stat-card">
                     <div className="stat-icon" style={{ backgroundColor: '#e8f5e9', color: '#2e7d32' }}>
-                        <Icon name="check-circle" size={32} strokeWidth={2.5} />
+                        <Icon name="check-circle" size={24} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Presentes</h3>
@@ -53,7 +78,7 @@ const DashboardHome: React.FC = () => {
 
                 <div className="stat-card">
                     <div className="stat-icon" style={{ backgroundColor: '#ffebee', color: '#c62828' }}>
-                        <Icon name="x" size={32} strokeWidth={2.5} />
+                        <Icon name="x" size={24} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Ausentes</h3>
@@ -63,7 +88,7 @@ const DashboardHome: React.FC = () => {
 
                 <div className="stat-card">
                     <div className="stat-icon" style={{ backgroundColor: '#fff3e0', color: '#ef6c00' }}>
-                        <Icon name="clock" size={32} strokeWidth={2.5} />
+                        <Icon name="clock" size={24} strokeWidth={2.5} />
                     </div>
                     <div className="stat-content">
                         <h3>Tardanzas</h3>
@@ -76,33 +101,21 @@ const DashboardHome: React.FC = () => {
                 <div className="content-card">
                     <h3>Actividad Reciente</h3>
                     <div className="activity-list">
-                        <div className="activity-item">
-                            <span className="activity-icon activity-entry">
-                                <Icon name="log-in" size={22} color="#28a745" strokeWidth={2.5} />
-                            </span>
-                            <div className="activity-details">
-                                <p><strong>Juan Pérez</strong> registró entrada</p>
-                                <small>Hace 5 minutos</small>
-                            </div>
-                        </div>
-                        <div className="activity-item">
-                            <span className="activity-icon activity-exit">
-                                <Icon name="log-out" size={22} color="#dc3545" strokeWidth={2.5} />
-                            </span>
-                            <div className="activity-details">
-                                <p><strong>María García</strong> registró salida</p>
-                                <small>Hace 15 minutos</small>
-                            </div>
-                        </div>
-                        <div className="activity-item">
-                            <span className="activity-icon activity-permit">
-                                <Icon name="file-plus" size={22} color="#667eea" strokeWidth={2.5} />
-                            </span>
-                            <div className="activity-details">
-                                <p><strong>Carlos López</strong> solicitó permiso</p>
-                                <small>Hace 1 hora</small>
-                            </div>
-                        </div>
+                        {recentActivities.length > 0 ? (
+                            recentActivities.map((activity: any, index: number) => (
+                                <div key={activity.id || index} className="activity-item">
+                                    <span className="activity-icon" style={{ color: getStatusColor(activity.estado) }}>
+                                        <Icon name={getStatusIcon(activity.estado) as any} size={22} strokeWidth={2.5} />
+                                    </span>
+                                    <div className="activity-details">
+                                        <p><strong>{activity.usuario}</strong> - {activity.turno}</p>
+                                        <small>{activity.hora} • <span style={{ color: getStatusColor(activity.estado), fontWeight: 600 }}>{activity.estado}</span></small>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="no-activity">No hay actividad reciente</p>
+                        )}
                     </div>
                 </div>
 
@@ -110,15 +123,15 @@ const DashboardHome: React.FC = () => {
                     <div className="content-card">
                         <h3>Acciones Rápidas</h3>
                         <div className="quick-actions">
-                            <button className="action-btn">
+                            <button className="action-btn" onClick={() => navigate('/dashboard/personal')}>
                                 <Icon name="user-plus" size={24} strokeWidth={2.5} />
                                 <span>Nuevo Personal</span>
                             </button>
-                            <button className="action-btn">
+                            <button className="action-btn" onClick={() => navigate('/dashboard/reporte-asistencias')}>
                                 <Icon name="bar-chart-2" size={24} strokeWidth={2.5} />
                                 <span>Generar Reporte</span>
                             </button>
-                            <button className="action-btn">
+                            <button className="action-btn" onClick={() => navigate('/dashboard/permisos')}>
                                 <Icon name="check-square" size={24} strokeWidth={2.5} />
                                 <span>Aprobar Permisos</span>
                             </button>
@@ -132,9 +145,9 @@ const DashboardHome: React.FC = () => {
 
 // Placeholder components for other routes
 const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
-    <div style={{ padding: '2rem' }}>
-        <h2>{title}</h2>
-        <p>Esta página está en desarrollo.</p>
+    <div style={{ padding: '2rem', textAlign: 'center', color: '#6c757d' }}>
+        <Icon name="settings" size={48} strokeWidth={1.5} />
+        <p style={{ marginTop: '1rem', fontSize: '1.1rem' }}>La sección <strong>{title}</strong> está en desarrollo.</p>
     </div>
 );
 
@@ -195,11 +208,13 @@ const Dashboard: React.FC = () => {
                     </DashboardLayout>
                 }
             />
+
+
             <Route
                 path="/permisos"
                 element={
-                    <DashboardLayout title="Gestión de Permisos" subtitle="Administra permisos">
-                        <PlaceholderPage title="Gestión de Permisos" />
+                    <DashboardLayout title="Gestión de Permisos" subtitle="Administra permisos y ausencias">
+                        <PermisosPage mode="admin" />
                     </DashboardLayout>
                 }
             />
@@ -207,7 +222,7 @@ const Dashboard: React.FC = () => {
                 path="/mis-permisos"
                 element={
                     <DashboardLayout title="Mis Permisos" subtitle="Mis solicitudes de permisos">
-                        <PlaceholderPage title="Mis Permisos" />
+                        <PermisosPage mode="user" />
                     </DashboardLayout>
                 }
             />

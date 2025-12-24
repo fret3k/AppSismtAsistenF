@@ -1,0 +1,221 @@
+.permisos-page {
+    padding: 1rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    /* Centers content if screen is very wide */
+}
+
+/* Reusing some existing styles but specific for permissions card */
+
+.permisos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.permiso-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border-left: 5px solid #ccc;
+    transition: transform 0.2s ease;
+}
+
+.permiso-card:hover {
+    transform: translateY(-2px);
+}
+
+.status-pendiente {
+    border-left-color: #fca522;
+}
+
+.status-aprobada {
+    border-left-color: #28a745;
+}
+
+.status-denegada {
+    border-left-color: #dc3545;
+}
+
+.status-anulada {
+    border-left-color: #6c757d;
+}
+
+
+.permiso-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.permiso-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.badge-type {
+    background: #e9ecef;
+    color: #495057;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    align-self: flex-start;
+}
+
+.user-name {
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.permiso-date {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.status-badge.success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.status-badge.warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.neutral {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.permiso-dates {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 1rem;
+    background: #f8f9fa;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.date-block {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #555;
+}
+
+.date-arrow {
+    color: #999;
+    font-weight: bold;
+}
+
+.permiso-reason {
+    color: #333;
+    line-height: 1.5;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.admin-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.btn-approve {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-deny {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-approve:hover {
+    background: #218838;
+}
+
+.btn-deny:hover {
+    background: #c82333;
+}
+
+/* Form Styles Override */
+.simple-select,
+.simple-textarea,
+input[type="date"],
+input[type="time"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 600px) {
+    .permiso-dates {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .date-arrow {
+        transform: rotate(90deg);
+        margin: 5px 0;
+    }
+}

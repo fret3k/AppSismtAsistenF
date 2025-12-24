@@ -41,5 +41,10 @@ export const asistenciaService = {
             },
             true
         );
+    },
+
+    // GET /asistencia/recientes?limite={limite}
+    async getRecientes(limite: number = 5): Promise<any> {
+        return await apiRequest<any>(`/asistencia/recientes?limite=${limite}`, {}, true);
     }
 };

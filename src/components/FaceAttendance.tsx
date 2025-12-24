@@ -1,19 +1,22 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as faceapi from 'face-api.js';
+import Icon from './Icon';
 import { getSettings } from '../pages/ConfiguracionPage';
+import RecentAttendances from './RecentAttendances';
 import './FaceAttendance.css';
 
 // Tipos para el flujo de validación
 type ValidationStep = 'loading' | 'waiting' | 'detecting' | 'challenge' | 'validating' | 'success' | 'error' | 'no_match';
 
 interface AsistenciaResponse {
-    score?: number;
-    matched_personal_id?: string;
+    reconocido?: boolean;
     mensaje?: string;
+    detalle?: string;
     usuario?: string;
-    tipo?: string;
+    turno?: string;
     estado?: string;
-    fecha?: string;
+    hora?: string;
+    ya_registrado?: boolean;
 }
 
 interface ErrorResponse {
@@ -35,10 +38,13 @@ const FaceAttendance: React.FC = () => {
     const [happyScore, setHappyScore] = useState(0);
     const [detectedPerson, setDetectedPerson] = useState<AsistenciaResponse | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
+    const [updateTrigger, setUpdateTrigger] = useState(0);
+    const [currentTime, setCurrentTime] = useState(new Date());
 
     // Configuración
     const [requireSmile, setRequireSmile] = useState(true);
     const [smileThreshold, setSmileThreshold] = useState(0.7);
+    const [showRecentAttendances, setShowRecentAttendances] = useState(true);
 
     const API_BASE_URL = 'http://localhost:8000';
 
@@ -47,6 +53,7 @@ const FaceAttendance: React.FC = () => {
         const settings = getSettings();
         setRequireSmile(settings.requireSmile);
         setSmileThreshold(settings.smileThreshold);
+        setShowRecentAttendances(settings.showRecentAttendances);
     }, []);
 
     // Escuchar cambios en configuración
@@ -191,7 +198,7 @@ const FaceAttendance: React.FC = () => {
     }, [modelsLoaded]);
 
     // Enviar asistencia en tiempo real
-    const sendRealtimeAttendance = useCallback(async (embedding: Float32Array, tipoRegistro: string = 'ENTRADA_M') => {
+    const sendRealtimeAttendance = useCallback(async (embedding: Float32Array) => {
         const imagenBase64 = captureImageBase64();
         const embeddingArray = Array.from(embedding);
 
@@ -201,7 +208,6 @@ const FaceAttendance: React.FC = () => {
             body: JSON.stringify({
                 embedding: embeddingArray,
                 marca_tiempo: new Date().toISOString(),
-                tipo_registro: tipoRegistro,
                 imagen_base64: imagenBase64
             }),
         });
@@ -221,19 +227,20 @@ const FaceAttendance: React.FC = () => {
             setValidationStep('validating');
             setStatusMessage("Verificando...");
 
-            const result = await sendRealtimeAttendance(descriptor, 'ENTRADA_M');
+            const result = await sendRealtimeAttendance(descriptor);
 
             if (result.success && result.data) {
                 setDetectedPerson(result.data);
                 setValidationStep('success');
                 setStatusMessage("¡Registrado!");
+                setUpdateTrigger(prev => prev + 1); // Actualizar historial
 
                 setTimeout(() => {
                     setValidationStep('detecting');
                     setStatusMessage("Buscando rostro...");
                     setHappyScore(0);
                     setDetectedPerson(null);
-                }, 3000);
+                }, 12000); // Aumentado a 12s
             } else {
                 setErrorMessage(result.error || 'No se encontró coincidencia');
                 setValidationStep('no_match');
@@ -315,6 +322,15 @@ const FaceAttendance: React.FC = () => {
         };
     }, [isCameraActive, modelsLoaded, validationStep, runDetection]);
 
+    // Actualizar reloj cada segundo
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
     // Cargar modelos al montar
     useEffect(() => {
         loadModels();
@@ -332,92 +348,151 @@ const FaceAttendance: React.FC = () => {
         }
     };
 
+    // Formatear fecha y hora
+    const formatTime = (date: Date): string => {
+        return date.toLocaleTimeString('es-PE', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+    };
+
+    const formatDate = (date: Date): string => {
+        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+        const dayName = days[date.getDay()];
+        const day = date.getDate();
+        const month = months[date.getMonth()];
+        const year = date.getFullYear();
+
+        return `${dayName}, ${day} de ${month} de ${year}`;
+    };
+
     return (
         <div className="face-attendance-container">
-            <div className="camera-card">
-                {/* Video con canvas overlay */}
-                <div className="video-container">
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        muted
-                        playsInline
-                        onLoadedMetadata={() => {
-                            if (canvasRef.current && videoRef.current) {
-                                canvasRef.current.width = videoRef.current.videoWidth;
-                                canvasRef.current.height = videoRef.current.videoHeight;
-                            }
-                        }}
-                    />
-                    <canvas ref={canvasRef} className="detection-canvas" />
-
-                    {/* Badge de estado */}
-                    <div className={`status-badge ${getStepClass()}`}>
-                        {validationStep === 'validating' && <span className="mini-spinner"></span>}
-                        {statusMessage}
-                        {!requireSmile && validationStep === 'detecting' && (
-                            <span className="mode-badge">Auto</span>
-                        )}
+            {/* Columna Izquierda: Cámara Maximizada */}
+            <div className="main-column">
+                <div className="camera-card">
+                    {/* Header de la tarjeta */}
+                    <div className="camera-header">
+                        <div className={`status-pill ${isCameraActive ? 'active' : 'inactive'}`}>
+                            <span className="status-dot"></span>
+                            {isCameraActive ? 'CÁMARA ACTIVA' : 'CÁMARA INACTIVA'}
+                        </div>
+                        <div className="camera-id">
+                            <Icon name="camera" size={14} style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} />
+                            CAM-01
+                        </div>
                     </div>
 
-                    {/* Indicador de sonrisa (solo si está activo) */}
-                    {requireSmile && validationStep === 'challenge' && (
-                        <div className="smile-indicator">
-                            <div className="smile-bar">
-                                <div
-                                    className={`smile-fill ${happyScore >= smileThreshold ? 'valid' : ''}`}
-                                    style={{ width: `${happyScore * 100}%` }}
-                                />
+                    {/* Video con canvas overlay */}
+                    <div className="video-container">
+                        <div className="video-wrapper">
+                            <video
+                                ref={videoRef}
+                                autoPlay
+                                muted
+                                playsInline
+                                onLoadedMetadata={() => {
+                                    if (canvasRef.current && videoRef.current) {
+                                        canvasRef.current.width = videoRef.current.videoWidth;
+                                        canvasRef.current.height = videoRef.current.videoHeight;
+                                    }
+                                }}
+                            />
+                            <canvas ref={canvasRef} className="detection-canvas" />
+
+                            {/* Overlay de escaneo */}
+                            {isCameraActive && <div className="scan-overlay"></div>}
+
+                            {/* Estado: Validando / Mensajes */}
+                            <div className={`status-overlay ${getStepClass()}`}>
+                                {validationStep === 'validating' && <span className="mini-spinner"></span>}
+                                <span className="status-text">{statusMessage}</span>
                             </div>
-                            <span className="smile-emoji">😊</span>
+
+                            {/* Indicador de sonrisa */}
+                            {requireSmile && validationStep === 'challenge' && (
+                                <div className="smile-indicator">
+                                    <div className="smile-bar">
+                                        <div
+                                            className={`smile-fill ${happyScore >= smileThreshold ? 'valid' : ''}`}
+                                            style={{ width: `${happyScore * 100}%` }}
+                                        />
+                                    </div>
+                                    <Icon name="smile" size={24} className="smile-emoji" color="white" />
+                                </div>
+                            )}
+
+                            {/* Toast de éxito / error */}
+                            {validationStep === 'success' && detectedPerson && (
+                                <div className={`result-toast success ${detectedPerson.ya_registrado ? 'warning' : ''}`}>
+                                    <div className="toast-icon">
+                                        <Icon name={detectedPerson.ya_registrado ? "alert-triangle" : "check"} size={20} />
+                                    </div>
+                                    <div className="toast-content">
+                                        <span className="toast-title">{detectedPerson.mensaje}</span>
+                                        <span className="toast-name">{detectedPerson.usuario}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {(validationStep === 'no_match' || validationStep === 'error') && (
+                                <div className="result-toast error">
+                                    <div className="toast-icon">
+                                        <Icon name={validationStep === 'no_match' ? "user-x" : "alert-circle"} size={20} />
+                                    </div>
+                                    <div className="toast-content">
+                                        <span className="toast-title">{validationStep === 'no_match' ? 'No reconocido' : 'Error'}</span>
+                                        <span className="toast-name">{errorMessage || 'Intente nuevamente'}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Guías visuales de esquina */}
+                            <div className="corner-guide top-left"></div>
+                            <div className="corner-guide top-right"></div>
+                            <div className="corner-guide bottom-left"></div>
+                            <div className="corner-guide bottom-right"></div>
                         </div>
-                    )}
-
-                    {/* Toast de éxito */}
-                    {validationStep === 'success' && detectedPerson && (
-                        <div className="success-toast">
-                            <div className="toast-icon">✓</div>
-                            <div className="toast-content">
-                                <span className="toast-name">{detectedPerson.usuario || 'Usuario'}</span>
-                                <span className="toast-info">
-                                    {detectedPerson.tipo} • {detectedPerson.estado}
-                                </span>
-                                {detectedPerson.score && (
-                                    <span className="toast-score">
-                                        Coincidencia: {Math.round(detectedPerson.score * 100)}%
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Toast de error */}
-                    {validationStep === 'no_match' && (
-                        <div className="error-toast">
-                            <div className="toast-icon">✗</div>
-                            <div className="toast-content">
-                                <span className="toast-name">{errorMessage}</span>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Controles */}
-                <div className="controls">
-                    <button
-                        className={isCameraActive ? "btn-secondary" : "btn-primary"}
-                        onClick={toggleCamera}
-                        disabled={!modelsLoaded}
-                    >
-                        {isCameraActive ? '⏹ Detener' : '▶ Iniciar'}
-                    </button>
-                </div>
-
-                {/* Indicador de configuración */}
-                {!requireSmile && (
-                    <div className="config-indicator">
-                        ⚡ Modo rápido (sin sonrisa)
                     </div>
+
+                    {/* Footer de controles */}
+                    <div className="camera-controls">
+                        <div className="control-group">
+                            <label className="switch-label">
+                                <Icon name={requireSmile ? "smile" : "zap"} size={16} />
+                                <span className="label-text">{requireSmile ? "Sonrisa requerida" : "Modo Rápido"}</span>
+                            </label>
+                        </div>
+                        <button
+                            className={`action-button ${isCameraActive ? 'stop' : 'start'}`}
+                            onClick={toggleCamera}
+                            disabled={!modelsLoaded}
+                        >
+                            <Icon name={isCameraActive ? "square" : "play-circle"} size={18} />
+                            {isCameraActive ? 'Detener' : 'Iniciar Escaneo'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Columna Derecha: Reloj y Historial */}
+            <div className="side-column">
+                <div className="clock-card">
+                    <div className="clock-header">HORA DEL SISTEMA</div>
+                    <div className="time-display">{formatTime(currentTime)}</div>
+                    <div className="date-display">{formatDate(currentTime)}</div>
+                    <div className="clock-icon-wrapper">
+                        <Icon name="clock" size={32} />
+                    </div>
+                </div>
+
+                {showRecentAttendances && (
+                    <RecentAttendances updateTrigger={updateTrigger} />
                 )}
             </div>
         </div>

@@ -1,7 +1,7 @@
 .navbar {
     background: linear-gradient(135deg, var(--primary-red) 0%, var(--secondary-red) 100%);
-    padding: 15px 30px;
-    box-shadow: 0 4px 20px rgba(139, 0, 0, 0.3);
+    padding: 8px 20px;
+    box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -19,48 +19,48 @@
 .navbar-brand {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     color: var(--white);
     text-decoration: none;
     font-weight: 700;
-    font-size: 1.2rem;
+    font-size: 1rem;
     transition: transform 0.3s ease;
 }
 
 .navbar-brand:hover {
-    transform: scale(1.05);
+    transform: scale(1.02);
 }
 
 .navbar-logo {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid var(--white);
-    border-radius: 8px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 18px;
-    backdrop-filter: blur(10px);
+    font-size: 16px;
+    backdrop-filter: blur(5px);
 }
 
 .navbar-actions {
     display: flex;
-    gap: 15px;
+    gap: 10px;
     align-items: center;
 }
 
 .btn-navbar {
     background: rgba(255, 255, 255, 0.2);
     color: var(--white);
-    padding: 4px 8px;
-    border-radius: 25px;
+    padding: 6px 16px;
+    border-radius: 20px;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     text-decoration: none;
     display: inline-block;
 }
@@ -68,37 +68,40 @@
 .btn-navbar:hover {
     background: rgba(255, 255, 255, 0.3);
     border-color: var(--white);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-image {
-    width: 60x;
-    /* Nuevo ancho */
-    height: 60px;
-    /* Nueva altura */
+    width: auto;
+    height: 40px;
+    /* Reducido de 60px */
     object-fit: contain;
 }
 
 
 @media (max-width: 768px) {
     .navbar {
-        padding: 10px 20px;
+        padding: 5px 15px;
     }
 
     .navbar-brand {
-        font-size: 1rem;
+        font-size: 0.9rem;
+        gap: 8px;
     }
 
     .navbar-logo {
-        width: 35px;
-        height: 35px;
-        font-size: 16px;
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
     }
 
     .btn-navbar {
-        padding: 8px 18px;
-        font-size: 0.85rem;
+        padding: 5px 12px;
+        font-size: 0.8rem;
     }
 
+    .navbar-image {
+        height: 32px;
+    }
 }

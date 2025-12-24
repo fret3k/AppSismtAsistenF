@@ -131,11 +131,7 @@ const AsistenciasPage: React.FC = () => {
 
     return (
         <div className="asistencia-page">
-            <div className="page-header">
-                <div className="title-section">
-                    <h1>Registro y Control de Asistencia</h1>
-                    <p className="subtitle">Gestión diaria e historial de marcaciones</p>
-                </div>
+            <div className="page-header" style={{ justifyContent: 'flex-end' }}>
                 <div className="header-actions">
                     <div className="tabs">
                         <button className={activeTab === 'control' ? 'active' : ''} onClick={() => setActiveTab('control')}>

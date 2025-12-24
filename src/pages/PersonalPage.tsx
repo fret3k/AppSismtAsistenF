@@ -223,8 +223,7 @@ const PersonalPage: React.FC = () => {
 
     return (
         <div className="personal-page">
-            <div className="page-header">
-                <h1>Gestión de Personal</h1>
+            <div className="actions-header" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
                 <button
                     className="btn-primary"
                     onClick={() => {
@@ -401,21 +400,22 @@ const PersonalPage: React.FC = () => {
                                         </span>
                                     </td>
                                     <td>
-                                        <button
-                                            className="btn-edit"
-                                            onClick={() => handleEdit(p)}
-                                            title="Editar"
-                                            style={{ marginRight: '8px', background: 'none', border: 'none', cursor: 'pointer' }}
-                                        >
-                                            <Icon name="edit" size={20} color="#007bff" />
-                                        </button>
-                                        <button
-                                            className="btn-delete"
-                                            onClick={() => handleDelete(p.id)}
-                                            title="Eliminar"
-                                        >
-                                            <Icon name="trash-2" size={20} color="#dc3545" />
-                                        </button>
+                                        <div className="action-buttons">
+                                            <button
+                                                className="btn-icon btn-edit"
+                                                onClick={() => handleEdit(p)}
+                                                title="Editar"
+                                            >
+                                                <Icon name="edit" size={18} color="#007bff" />
+                                            </button>
+                                            <button
+                                                className="btn-icon btn-delete"
+                                                onClick={() => handleDelete(p.id)}
+                                                title="Eliminar"
+                                            >
+                                                <Icon name="trash-2" size={18} color="#dc3545" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

@@ -29,7 +29,7 @@ export type IconName =
     | 'underline' | 'unlock' | 'upload' | 'upload-cloud' | 'user' | 'user-check'
     | 'user-minus' | 'user-plus' | 'user-x' | 'users' | 'video' | 'video-off'
     | 'volume' | 'volume-1' | 'volume-2' | 'volume-x' | 'watch' | 'wifi'
-    | 'wifi-off' | 'x' | 'x-circle' | 'x-octagon' | 'x-square' | 'zap' | 'zoom-in' | 'zoom-out';
+    | 'wifi-off' | 'x' | 'x-circle' | 'x-octagon' | 'x-square' | 'zap' | 'zoom-in' | 'zoom-out' | 'square';
 
 interface IconProps {
     name: IconName;
@@ -37,6 +37,7 @@ interface IconProps {
     color?: string;
     strokeWidth?: number;
     className?: string;
+    style?: React.CSSProperties;
 }
 
 // Cache for loaded SVG content
@@ -47,7 +48,8 @@ const Icon: React.FC<IconProps> = ({
     size = 24,  // Increased default size from 20 to 24
     color = 'currentColor',
     strokeWidth = 2,
-    className = ''
+    className = '',
+    style = {}
 }) => {
     const [svgContent, setSvgContent] = React.useState<string>('');
 
@@ -102,7 +104,8 @@ const Icon: React.FC<IconProps> = ({
                 minWidth: size,
                 minHeight: size,
                 color: color,
-                flexShrink: 0
+                flexShrink: 0,
+                ...style
             }}
             dangerouslySetInnerHTML={{ __html: svgContent }}
         />
