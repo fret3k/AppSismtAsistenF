@@ -198,7 +198,8 @@ video {
     height: 100%;
     object-fit: cover;
     /* Coincidir con video */
-    transform: scaleX(-1);
+    /* transform: scaleX(-1); REMOVED to fix text inversion */
+    transform: none;
 }
 
 /* Guías visuales (ahora relativas al video-wrapper) */

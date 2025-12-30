@@ -183,7 +183,16 @@ const FaceAttendance: React.FC = () => {
 
         if (detections) {
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
-            faceapi.draw.drawDetections(canvas, resizedDetections);
+
+            // Invertir coordenadas X para corregir el efecto espejo (ya que quitamos el scaleX del canvas)
+            const box = resizedDetections.detection.box;
+            const flippedBox = new faceapi.Box(
+                { x: displaySize.width - box.x - box.width, y: box.y, width: box.width, height: box.height }
+            );
+
+            // Dibujar solo el recuadro azul (sin texto/score para evitar números invertidos y mantener limpieza)
+            const drawBox = new faceapi.draw.DrawBox(flippedBox, { label: ' ' });
+            drawBox.draw(canvas);
 
             const happy = detections.expressions.happy || 0;
 
