@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { personalService } from '../services/personalService';
 import { ApiError } from '../services/api';
-import type { PersonalResponseDTO, PersonalCreateDTO } from '../types';
+import type { PersonalResponseDTO, PersonalCreateDTO, PersonalUpdateWithEncodingDTO } from '../types';
 import FaceCapture from '../components/FaceCapture';
 import Icon from '../components/Icon';
 import './PersonalPage.css';
@@ -101,9 +101,9 @@ const PersonalPage: React.FC = () => {
 
             if (isEditing && editingId) {
                 // Update mode
-                const updateData: any = {
+                const updateData = {
                     ...formData,
-                };
+                } as unknown as PersonalUpdateWithEncodingDTO;
 
                 // Only include password if it was entered
                 if (!formData.password) {

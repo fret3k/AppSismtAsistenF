@@ -184,3 +184,18 @@ export interface HTTPValidationError {
 export interface ApiError {
     detail: string | ValidationError[];
 }
+
+// ============ Reporte Types ============
+export interface ReporteMensualItem {
+    numero: number;
+    dni: string;
+    apellidos_y_nombres: string;
+    dias_laborables: number;
+    dias_asistidos: number;
+    tardanzas: number;
+    faltas: number;
+    ausencias_justificadas: number;
+    salidas_anticipadas: number;
+    horas_sobretiempo: number;
+    observaciones: string;
+}

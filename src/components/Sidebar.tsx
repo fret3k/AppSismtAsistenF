@@ -37,7 +37,6 @@ const Sidebar: React.FC = () => {
                 items: [
                     { path: '/dashboard/asistencias', icon: 'calendar', text: 'Registro Asistencias', adminOnly: false },
                     { path: '/dashboard/mis-asistencias', icon: 'clipboard', text: 'Mis Asistencias', adminOnly: false, userOnly: true },
-                    { path: '/dashboard/reporte-asistencias', icon: 'pie-chart', text: 'Reporte General', adminOnly: true },
                     { path: '/dashboard/permisos', icon: 'file-text', text: 'Gestión Permisos', adminOnly: true },
                     { path: '/dashboard/mis-permisos', icon: 'file', text: 'Mis Permisos', adminOnly: false, userOnly: true },
                 ],
@@ -45,7 +44,7 @@ const Sidebar: React.FC = () => {
             {
                 section: 'Reportes',
                 items: [
-                    { path: '/dashboard/reportes', icon: 'trending-up', text: 'Reportes Generales', adminOnly: true },
+                    { path: '/dashboard/reporte-asistencias', icon: 'pie-chart', text: 'Reporte General', adminOnly: true },
                     { path: '/dashboard/estadisticas', icon: 'activity', text: 'Estadísticas', adminOnly: true },
                     { path: '/dashboard/exportar', icon: 'download', text: 'Exportar Datos', adminOnly: true },
                 ],

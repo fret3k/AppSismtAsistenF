@@ -8,6 +8,7 @@ import MiPerfilPage from './MiPerfilPage';
 import Icon from '../components/Icon';
 import AsistenciasPage from './AsistenciasPage';
 import PermisosPage from './PermisosPage';
+import { ReporteMensualPage } from './ReporteMensualPage';
 import './Dashboard.css';
 import { asistenciaService } from '../services/asistenciaService';
 import type { EstadisticasDiaDTO } from '../types';
@@ -204,7 +205,7 @@ const Dashboard: React.FC = () => {
                 path="/reporte-asistencias"
                 element={
                     <DashboardLayout title="Reporte de Asistencias" subtitle="Reporte general">
-                        <PlaceholderPage title="Reporte de Asistencias" />
+                        <ReporteMensualPage />
                     </DashboardLayout>
                 }
             />
@@ -245,8 +246,8 @@ const Dashboard: React.FC = () => {
             <Route
                 path="/reportes"
                 element={
-                    <DashboardLayout title="Reportes Generales" subtitle="Reportes del sistema">
-                        <PlaceholderPage title="Reportes Generales" />
+                    <DashboardLayout title="Reporte General" subtitle="Reporte de asistencias">
+                        <ReporteMensualPage />
                     </DashboardLayout>
                 }
             />
