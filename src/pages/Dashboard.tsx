@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import PersonalPage from './PersonalPage';
 import ConfiguracionPage from './ConfiguracionPage';
 import MiPerfilPage from './MiPerfilPage';
+import MisAsistenciasPage from './MisAsistenciasPage';
 import Icon from '../components/Icon';
 import AsistenciasPage from './AsistenciasPage';
 import PermisosPage from './PermisosPage';
@@ -53,6 +54,35 @@ const DashboardHome: React.FC = () => {
         if (e === 'TARDE') return 'alert-circle';
         return 'clock';
     };
+
+    // Si es usuario común, mostrar pantalla de bienvenida
+    if (!isAdmin) {
+        return (
+            <div className="user-welcome">
+                <div className="welcome-card-large">
+                    <div className="welcome-icon-large">
+                        <Icon name="smile" size={64} color="#667eea" />
+                    </div>
+                    <h1>¡Bienvenido al Sistema SICAF!</h1>
+                    <p>Sistema de Control de Asistencia Facial</p>
+                    <div className="welcome-actions">
+                        <button className="welcome-btn" onClick={() => navigate('/dashboard/mis-asistencias')}>
+                            <Icon name="calendar" size={20} />
+                            Ver Mis Asistencias
+                        </button>
+                        <button className="welcome-btn secondary" onClick={() => navigate('/dashboard/mis-permisos')}>
+                            <Icon name="file-text" size={20} />
+                            Mis Permisos
+                        </button>
+                        <button className="welcome-btn secondary" onClick={() => navigate('/dashboard/mi-perfil')}>
+                            <Icon name="user" size={20} />
+                            Mi Perfil
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -197,7 +227,7 @@ const Dashboard: React.FC = () => {
                 path="/mis-asistencias"
                 element={
                     <DashboardLayout title="Mis Asistencias" subtitle="Historial de asistencias">
-                        <PlaceholderPage title="Mis Asistencias" />
+                        <MisAsistenciasPage />
                     </DashboardLayout>
                 }
             />

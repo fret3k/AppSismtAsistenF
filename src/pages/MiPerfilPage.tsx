@@ -82,7 +82,6 @@ const MiPerfilPage: React.FC = () => {
     };
 
     const handleCancel = () => {
-        // Reset form data to original user data
         if (user) {
             setFormData({
                 nombre: user.nombre || '',
@@ -105,7 +104,6 @@ const MiPerfilPage: React.FC = () => {
             return;
         }
 
-        // Validate password if provided
         if (showPasswordFields && formData.password) {
             if (formData.password.length < 8) {
                 showNotification('La contraseña debe tener al menos 8 caracteres', 'error');
@@ -120,7 +118,6 @@ const MiPerfilPage: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // Build update data (only include changed fields)
             const updateData: PersonalUpdateDTO = {};
 
             if (formData.nombre !== user.nombre) {
@@ -139,17 +136,14 @@ const MiPerfilPage: React.FC = () => {
                 updateData.password = formData.password;
             }
 
-            // Check if there are any changes
             if (Object.keys(updateData).length === 0) {
                 showNotification('No hay cambios que guardar', 'error');
                 setIsLoading(false);
                 return;
             }
 
-            // Call API to update
             const updatedPersonal = await personalService.update(user.id, updateData);
 
-            // Update local user state
             updateUser({
                 nombre: updatedPersonal.nombre,
                 apellido_paterno: updatedPersonal.apellido_paterno,
@@ -220,7 +214,6 @@ const MiPerfilPage: React.FC = () => {
                 </div>
 
                 {!isEditing ? (
-                    /* View Mode */
                     <div className="profile-details">
                         <div className="detail-item">
                             <label>Nombre</label>
@@ -240,7 +233,6 @@ const MiPerfilPage: React.FC = () => {
                         </div>
                     </div>
                 ) : (
-                    /* Edit Mode */
                     <form onSubmit={handleSubmit}>
                         <div className="form-row">
                             <div className="form-group">
@@ -292,7 +284,6 @@ const MiPerfilPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Password Section */}
                         <div className="password-section">
                             <label
                                 className="password-toggle"
@@ -330,7 +321,6 @@ const MiPerfilPage: React.FC = () => {
                             )}
                         </div>
 
-                        {/* Form Actions */}
                         <div className="form-actions">
                             <button
                                 type="button"
