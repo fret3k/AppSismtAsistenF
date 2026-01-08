@@ -36,7 +36,7 @@ const Sidebar: React.FC = () => {
             {
                 section: 'Asistencias',
                 items: [
-                    { path: '/dashboard/asistencias', icon: 'camera', text: 'Registro Facial' },
+                    { path: '/dashboard/asistencias', icon: 'camera', text: 'Registro y Control' },
                     { path: '/dashboard/permisos', icon: 'file-text', text: 'Gestión Permisos' },
                 ],
             },
@@ -44,7 +44,6 @@ const Sidebar: React.FC = () => {
                 section: 'Reportes',
                 items: [
                     { path: '/dashboard/reporte-asistencias', icon: 'pie-chart', text: 'Reporte General' },
-                    { path: '/dashboard/exportar', icon: 'download', text: 'Exportar Datos' },
                 ],
             },
             {

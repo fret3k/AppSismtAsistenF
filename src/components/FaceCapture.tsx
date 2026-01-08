@@ -217,7 +217,10 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({ onFaceDetected, onCancel }) =
                                         playsInline
                                         className={`video-preview ${isCameraActive ? 'active' : ''}`}
                                     />
-                                    <canvas ref={canvasRef} className="capture-canvas" />
+                                    <canvas
+                                        ref={canvasRef}
+                                        className={`capture-canvas ${isProcessing ? 'active' : ''}`}
+                                    />
 
                                     <div className="camera-controls">
                                         {!isCameraActive ? (
@@ -252,7 +255,10 @@ const FaceCapture: React.FC<FaceCaptureProps> = ({ onFaceDetected, onCancel }) =
 
                             {captureMode === 'upload' && (
                                 <>
-                                    <canvas ref={canvasRef} className="capture-canvas" />
+                                    <canvas
+                                        ref={canvasRef}
+                                        className="capture-canvas active"
+                                    />
                                     <div className="upload-area">
                                         <input
                                             ref={fileInputRef}

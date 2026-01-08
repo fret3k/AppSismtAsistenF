@@ -15,10 +15,10 @@
 .face-capture-content {
     background: white;
     border-radius: 16px;
-    padding: 2rem;
-    max-width: 800px;
-    width: 90%;
-    max-height: 90vh;
+    padding: 1.5rem;
+    max-width: 550px;
+    width: 95%;
+    max-height: 95vh;
     overflow-y: auto;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
@@ -27,15 +27,15 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
     border-bottom: 2px solid #e0e0e0;
 }
 
 .face-capture-header h2 {
     margin: 0;
     color: #1a1a1a;
-    font-size: 1.75rem;
+    font-size: 1.4rem;
 }
 
 .close-btn {
@@ -81,8 +81,8 @@
 /* Capture Mode Selector */
 .capture-mode-selector {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .mode-btn {
@@ -124,20 +124,19 @@
 /* Capture Area */
 .capture-area {
     position: relative;
-    min-height: 400px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     background: #f5f5f5;
     border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
 }
 
 .video-preview {
     width: 100%;
-    max-width: 640px;
+    max-width: 480px;
     border-radius: 8px;
     display: none;
 }
@@ -150,6 +149,13 @@
     max-width: 100%;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+    background: white;
+}
+
+.capture-canvas.active {
+    display: block;
+    margin-bottom: 1rem;
 }
 
 /* Camera Controls */
@@ -230,8 +236,9 @@
 .capture-instructions {
     background: #f5f5ff;
     border-left: 4px solid #667eea;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1rem;
     border-radius: 8px;
+    font-size: 0.9rem;
 }
 
 .capture-instructions h4 {

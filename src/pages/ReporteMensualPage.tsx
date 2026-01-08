@@ -128,9 +128,6 @@ export const ReporteMensualPage = () => {
         <div className="reporte-page">
             {/* Card de Filtros */}
             <div className="reporte-filters-card">
-                <h2>Reporte General de Asistencia</h2>
-                <p className="subtitle">Genera y exporta reportes mensuales detallados del personal</p>
-
                 <div className="filters-grid">
                     <div className="filter-group">
                         <label>Mes</label>
