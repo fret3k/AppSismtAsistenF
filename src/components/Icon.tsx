@@ -64,7 +64,7 @@ const Icon: React.FC<IconProps> = ({
             }
 
             try {
-                const response = await fetch(`/src/feather/${name}.svg`);
+                const response = await fetch(`/feather/${name}.svg`);
                 const text = await response.text();
 
                 // Parse and modify SVG attributes

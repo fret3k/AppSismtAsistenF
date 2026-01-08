@@ -30,6 +30,7 @@ const Sidebar: React.FC = () => {
                 items: [
                     { path: '/dashboard', icon: 'bar-chart-2', text: 'Dashboard' },
                     { path: '/dashboard/personal', icon: 'users', text: 'Gestión Personal' },
+                    { path: '/dashboard/mi-perfil', icon: 'user', text: 'Mi Perfil' },
                 ],
             },
             {
@@ -50,6 +51,12 @@ const Sidebar: React.FC = () => {
                 section: 'Sistema',
                 items: [
                     { path: '/dashboard/configuracion', icon: 'settings', text: 'Configuración' },
+                ],
+            },
+            {
+                section: 'Ayuda',
+                items: [
+                    { path: '/dashboard/ayuda', icon: 'help-circle', text: 'Centro de Ayuda' },
                 ],
             },
         ];
