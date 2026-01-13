@@ -8,7 +8,9 @@ interface AppSettings {
     requireSmile: boolean;
     smileThreshold: number;
     autoRegister: boolean;
-    showRecentAttendances: boolean;  // Nueva opción
+    showRecentAttendances: boolean;
+    faceDetectionThreshold: number;  // Precisión del detector facial (0.5 - 0.95)
+    faceDetectionMargin: number;     // Margen mínimo entre matches (0.01 - 0.15)
 }
 
 // Valores por defecto
@@ -16,7 +18,9 @@ const defaultSettings: AppSettings = {
     requireSmile: true,
     smileThreshold: 0.7,
     autoRegister: true,
-    showRecentAttendances: true  // Mostrar por defecto
+    showRecentAttendances: true,
+    faceDetectionThreshold: 0.75,  // Valor por defecto (75%)
+    faceDetectionMargin: 0.06      // Margen por defecto (6%)
 };
 
 // Valores por defecto para horarios
@@ -229,6 +233,42 @@ const ConfiguracionPage: React.FC = () => {
                         />
                         <span className="toggle-slider"></span>
                     </label>
+                </div>
+
+                <div className="config-item">
+                    <div className="config-info">
+                        <label>Precisión del Detector Facial: {Math.round(settings.faceDetectionThreshold * 100)}%</label>
+                        <p className="config-description">
+                            Umbral mínimo de similitud para reconocer un rostro. Valores más altos = mayor seguridad pero puede rechazar usuarios legítimos. Valores más bajos = más permisivo pero menos seguro.
+                        </p>
+                    </div>
+                    <input
+                        type="range"
+                        min="0.5"
+                        max="0.95"
+                        step="0.01"
+                        value={settings.faceDetectionThreshold}
+                        onChange={(e) => handleSlider('faceDetectionThreshold', parseFloat(e.target.value))}
+                        className="config-slider"
+                    />
+                </div>
+
+                <div className="config-item">
+                    <div className="config-info">
+                        <label>Margen de Diferenciación: {Math.round(settings.faceDetectionMargin * 100)}%</label>
+                        <p className="config-description">
+                            Diferencia mínima requerida entre el mejor match y el segundo mejor. Valores más bajos permiten reconocer usuarios con rostros similares, pero pueden causar confusiones.
+                        </p>
+                    </div>
+                    <input
+                        type="range"
+                        min="0.01"
+                        max="0.15"
+                        step="0.01"
+                        value={settings.faceDetectionMargin}
+                        onChange={(e) => handleSlider('faceDetectionMargin', parseFloat(e.target.value))}
+                        className="config-slider"
+                    />
                 </div>
             </div>
 

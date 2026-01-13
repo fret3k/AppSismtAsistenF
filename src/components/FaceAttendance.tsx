@@ -38,7 +38,6 @@ const FaceAttendance: React.FC = () => {
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [validationStep, setValidationStep] = useState<ValidationStep>('loading');
     const [statusMessage, setStatusMessage] = useState("Cargando modelos...");
-    const [happyScore, setHappyScore] = useState(0);
     const [detectedPerson, setDetectedPerson] = useState<AsistenciaResponse | null>(null);
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [updateTrigger, setUpdateTrigger] = useState(0);
@@ -51,6 +50,8 @@ const FaceAttendance: React.FC = () => {
     const [requireSmile, setRequireSmile] = useState(true);
     const [smileThreshold, setSmileThreshold] = useState(0.7);
     const [showRecentAttendances, setShowRecentAttendances] = useState(true);
+    const [faceDetectionThreshold, setFaceDetectionThreshold] = useState(0.75);
+    const [faceDetectionMargin, setFaceDetectionMargin] = useState(0.06);
 
     const API_BASE_URL = 'http://localhost:8000';
 
@@ -60,6 +61,8 @@ const FaceAttendance: React.FC = () => {
         setRequireSmile(settings.requireSmile);
         setSmileThreshold(settings.smileThreshold);
         setShowRecentAttendances(settings.showRecentAttendances);
+        setFaceDetectionThreshold(settings.faceDetectionThreshold || 0.75);
+        setFaceDetectionMargin(settings.faceDetectionMargin || 0.06);
     }, []);
 
     // Escuchar cambios en configuración
@@ -134,7 +137,6 @@ const FaceAttendance: React.FC = () => {
             setIsCameraActive(false);
             setValidationStep('waiting');
             setStatusMessage("Cámara apagada");
-            setHappyScore(0);
         }
     }, []);
 
@@ -177,7 +179,7 @@ const FaceAttendance: React.FC = () => {
         faceapi.matchDimensions(canvas, displaySize);
 
         const detections = await faceapi
-            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+            .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.5 }))
             .withFaceLandmarks()
             .withFaceExpressions()
             .withFaceDescriptor();
@@ -190,13 +192,13 @@ const FaceAttendance: React.FC = () => {
         if (detections) {
             const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
-            // Invertir coordenadas X para corregir el efecto espejo (ya que quitamos el scaleX del canvas)
+            // Invertir coordenadas X para corregir el efecto espejo
             const box = resizedDetections.detection.box;
             const flippedBox = new faceapi.Box(
                 { x: displaySize.width - box.x - box.width, y: box.y, width: box.width, height: box.height }
             );
 
-            // Dibujar solo el recuadro azul (sin texto/score para evitar números invertidos y mantener limpieza)
+            // Dibujar solo el recuadro azul
             const drawBox = new faceapi.draw.DrawBox(flippedBox, { label: ' ' });
             drawBox.draw(canvas);
 
@@ -224,7 +226,9 @@ const FaceAttendance: React.FC = () => {
                 embedding: embeddingArray,
                 marca_tiempo: new Date().toISOString(),
                 imagen_base64: imagenBase64,
-                solo_validar: true // Siempre pedir validación primero para mostrar el modal
+                solo_validar: true,
+                threshold: faceDetectionThreshold,
+                min_margin: faceDetectionMargin
             }),
         });
 
@@ -235,7 +239,7 @@ const FaceAttendance: React.FC = () => {
             const errorData: ErrorResponse = await response.json();
             return { success: false, error: errorData.detail || 'Error desconocido' };
         }
-    }, [captureImageBase64]);
+    }, [captureImageBase64, faceDetectionThreshold, faceDetectionMargin]);
 
     // Proceso de asistencia
     const processAttendance = useCallback(async (descriptor: Float32Array) => {
@@ -247,6 +251,20 @@ const FaceAttendance: React.FC = () => {
 
             if (result.success && result.data) {
                 if (result.data.preview) {
+                    if (result.data.ya_registrado) {
+                        setDetectedPerson(result.data);
+                        setValidationStep('success');
+                        setStatusMessage(result.data.mensaje || "Ya registrado");
+                        setUpdateTrigger(prev => prev + 1);
+
+                        setTimeout(() => {
+                            setValidationStep('detecting');
+                            setStatusMessage("Buscando rostro...");
+                            setDetectedPerson(null);
+                        }, 5000); // 5 segundos para leer el mensaje de ya registrado
+                        return;
+                    }
+
                     setPreviewData(result.data);
                     setShowConfirmModal(true);
                     setValidationStep('waiting');
@@ -262,9 +280,8 @@ const FaceAttendance: React.FC = () => {
                 setTimeout(() => {
                     setValidationStep('detecting');
                     setStatusMessage("Buscando rostro...");
-                    setHappyScore(0);
                     setDetectedPerson(null);
-                }, 8000);
+                }, 5000); // 5 segundos para éxito
             } else {
                 setErrorMessage(result.error || 'No se encontró coincidencia');
                 setValidationStep('no_match');
@@ -274,7 +291,7 @@ const FaceAttendance: React.FC = () => {
                     setValidationStep('detecting');
                     setStatusMessage("Buscando rostro...");
                     setErrorMessage('');
-                }, 2000);
+                }, 5000); // 5 segundos para errores de "no match"
             }
         } catch (error) {
             console.error('Error:', error);
@@ -295,8 +312,6 @@ const FaceAttendance: React.FC = () => {
         const result = await detectFace();
 
         if (result.faceDetected && result.descriptor) {
-            setHappyScore(result.happyScore);
-
             // Si NO se requiere sonrisa, procesar directamente
             if (!requireSmile) {
                 if (validationStep === 'detecting') {
@@ -326,7 +341,6 @@ const FaceAttendance: React.FC = () => {
                 validationStep !== 'error' && validationStep !== 'no_match' && !showConfirmModal) {
                 setValidationStep('detecting');
                 setStatusMessage("Buscando rostro...");
-                setHappyScore(0);
             }
         }
     }, [detectFace, validationStep, processAttendance, requireSmile, smileThreshold, showConfirmModal]);
@@ -360,17 +374,6 @@ const FaceAttendance: React.FC = () => {
         loadModels();
         return () => stopVideo();
     }, [loadModels, stopVideo]);
-
-    // Clase CSS según estado
-    const getStepClass = (): string => {
-        switch (validationStep) {
-            case 'success': return 'success';
-            case 'error': case 'no_match': return 'error';
-            case 'challenge': return 'challenge';
-            case 'validating': return 'validating';
-            default: return isCameraActive ? 'active' : '';
-        }
-    };
 
     // Formatear fecha y hora
     const formatTime = (date: Date): string => {
@@ -432,24 +435,50 @@ const FaceAttendance: React.FC = () => {
                             {/* Overlay de escaneo */}
                             {isCameraActive && <div className="scan-overlay"></div>}
 
-                            {/* Status messages removed as requested */}
+                            {/* Mensajes de feedback (Toast inferior unificado) */}
+                            {isCameraActive && (
+                                <>
+                                    {/* Cargando / Escaneando / Validando */}
+                                    {(validationStep === 'validating' || (validationStep === 'challenge' && requireSmile)) && (
+                                        <div className="result-toast info">
+                                            <div className="toast-icon">
+                                                <span className="mini-spinner" style={{ width: '18px', height: '18px', borderTopColor: '#0d6efd' }}></span>
+                                            </div>
+                                            <div className="toast-content">
+                                                <span className="toast-name">
+                                                    {validationStep === 'validating' ? "Verificando identidad..." : "Por favor, sonría para registrar"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
 
-                            {/* Indicador de sonrisa */}
-                            {requireSmile && validationStep === 'challenge' && (
-                                <div className="smile-indicator">
-                                    <div className="smile-bar">
-                                        <div
-                                            className={`smile-fill ${happyScore >= smileThreshold ? 'valid' : ''}`}
-                                            style={{ width: `${happyScore * 100}%` }}
-                                        />
-                                    </div>
-                                    <Icon name="smile" size={24} className="smile-emoji" color="white" />
-                                </div>
+                                    {/* Éxito / Ya registrado */}
+                                    {validationStep === 'success' && detectedPerson && (
+                                        <div className={`result-toast success ${detectedPerson.ya_registrado ? 'warning' : ''}`}>
+                                            <div className="toast-icon">
+                                                <Icon name={detectedPerson.ya_registrado ? "info" : "check"} size={20} />
+                                            </div>
+                                            <div className="toast-content">
+                                                <span className="toast-name">
+                                                    {detectedPerson.ya_registrado ? statusMessage : `¡Bienvenido, ${detectedPerson.usuario || 'Usuario'}!`}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Error / No match */}
+                                    {(validationStep === 'error' || validationStep === 'no_match') && (errorMessage || statusMessage) && (
+                                        <div className="result-toast error">
+                                            <div className="toast-icon">
+                                                <Icon name="alert-circle" size={20} />
+                                            </div>
+                                            <div className="toast-content">
+                                                <span className="toast-name">{errorMessage || statusMessage}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
-
-                            {/* Success toast removed as requested */}
-
-                            {/* Error toast removed as requested */}
 
                             {/* Guías visuales de esquina */}
                             <div className="corner-guide top-left"></div>
@@ -551,22 +580,36 @@ const FaceAttendance: React.FC = () => {
 
                                         const result = await response.json();
                                         if (response.ok) {
-                                            setDetectedPerson(result);
-                                            setValidationStep('success');
-                                            setStatusMessage("¡Registrado!");
-                                            setUpdateTrigger(prev => prev + 1);
-                                            setShowConfirmModal(false);
+                                            // Verificar si ya estaba registrado
+                                            if (result.ya_registrado) {
+                                                setDetectedPerson(result);
+                                                setValidationStep('success');
+                                                setStatusMessage(result.mensaje || "Ya registrado");
+                                                setShowConfirmModal(false);
 
-                                            setTimeout(() => {
-                                                setValidationStep('detecting');
-                                                setStatusMessage("Buscando rostro...");
-                                                setDetectedPerson(null);
-                                            }, 8000);
+                                                setTimeout(() => {
+                                                    setValidationStep('detecting');
+                                                    setStatusMessage("Buscando rostro...");
+                                                    setDetectedPerson(null);
+                                                }, 5000);
+                                            } else {
+                                                setDetectedPerson(result);
+                                                setValidationStep('success');
+                                                setStatusMessage("¡Registrado!");
+                                                setUpdateTrigger(prev => prev + 1);
+                                                setShowConfirmModal(false);
+
+                                                setTimeout(() => {
+                                                    setValidationStep('detecting');
+                                                    setStatusMessage("Buscando rostro...");
+                                                    setDetectedPerson(null);
+                                                }, 5000);
+                                            }
                                         } else {
                                             setErrorMessage(result.detail || "Error al registrar");
                                             setValidationStep('error');
                                             setShowConfirmModal(false);
-                                            setTimeout(() => setValidationStep('detecting'), 3000);
+                                            setTimeout(() => setValidationStep('detecting'), 5000);
                                         }
                                     } catch (err) {
                                         setErrorMessage("Error de conexión");
