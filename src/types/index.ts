@@ -106,6 +106,7 @@ export interface RegistrarAsistenciaDTO {
     reconocimiento_valido: boolean;
     motivo?: string | null;
     tipo_registro?: 'ENTRADA_M' | 'SALIDA_M' | 'ENTRADA_T' | 'SALIDA_T';
+    marca_tiempo?: string;
 }
 
 export interface AsistenciaRecordDTO {

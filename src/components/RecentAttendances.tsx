@@ -155,10 +155,7 @@ const RecentAttendances: React.FC<RecentAttendancesProps> = ({ updateTrigger = 0
                                 </div>
                             </div>
                             <div className="attendance-status">
-                                <span className="time-display">{item.hora}</span>
-                                <span className={`status-badge ${getEstadoClass(item.estado)}`}>
-                                    {item.estado === 'A TIEMPO' ? 'NORMAL' : item.estado}
-                                </span>
+                                <span className="recent-time-display">{item.hora}</span>
                             </div>
                         </div>
                     ))

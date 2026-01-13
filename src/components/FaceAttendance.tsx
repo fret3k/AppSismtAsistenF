@@ -13,10 +13,13 @@ interface AsistenciaResponse {
     mensaje?: string;
     detalle?: string;
     usuario?: string;
+    personal_id?: string;
     turno?: string;
+    tipo_registro?: string;
     estado?: string;
     hora?: string;
     ya_registrado?: boolean;
+    preview?: boolean;
 }
 
 interface ErrorResponse {
@@ -40,6 +43,9 @@ const FaceAttendance: React.FC = () => {
     const [errorMessage, setErrorMessage] = useState<string>('');
     const [updateTrigger, setUpdateTrigger] = useState(0);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [previewData, setPreviewData] = useState<AsistenciaResponse | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // Configuración
     const [requireSmile, setRequireSmile] = useState(true);
@@ -217,7 +223,8 @@ const FaceAttendance: React.FC = () => {
             body: JSON.stringify({
                 embedding: embeddingArray,
                 marca_tiempo: new Date().toISOString(),
-                imagen_base64: imagenBase64
+                imagen_base64: imagenBase64,
+                solo_validar: true // Siempre pedir validación primero para mostrar el modal
             }),
         });
 
@@ -239,6 +246,14 @@ const FaceAttendance: React.FC = () => {
             const result = await sendRealtimeAttendance(descriptor);
 
             if (result.success && result.data) {
+                if (result.data.preview) {
+                    setPreviewData(result.data);
+                    setShowConfirmModal(true);
+                    setValidationStep('waiting');
+                    setStatusMessage("Esperando confirmación");
+                    return;
+                }
+
                 setDetectedPerson(result.data);
                 setValidationStep('success');
                 setStatusMessage("¡Registrado!");
@@ -249,7 +264,7 @@ const FaceAttendance: React.FC = () => {
                     setStatusMessage("Buscando rostro...");
                     setHappyScore(0);
                     setDetectedPerson(null);
-                }, 12000); // Aumentado a 12s
+                }, 8000);
             } else {
                 setErrorMessage(result.error || 'No se encontró coincidencia');
                 setValidationStep('no_match');
@@ -308,13 +323,13 @@ const FaceAttendance: React.FC = () => {
             }
         } else {
             if (validationStep !== 'success' && validationStep !== 'validating' &&
-                validationStep !== 'error' && validationStep !== 'no_match') {
+                validationStep !== 'error' && validationStep !== 'no_match' && !showConfirmModal) {
                 setValidationStep('detecting');
                 setStatusMessage("Buscando rostro...");
                 setHappyScore(0);
             }
         }
-    }, [detectFace, validationStep, processAttendance, requireSmile, smileThreshold]);
+    }, [detectFace, validationStep, processAttendance, requireSmile, smileThreshold, showConfirmModal]);
 
     // Loop de detección
     useEffect(() => {
@@ -417,11 +432,7 @@ const FaceAttendance: React.FC = () => {
                             {/* Overlay de escaneo */}
                             {isCameraActive && <div className="scan-overlay"></div>}
 
-                            {/* Estado: Validando / Mensajes */}
-                            <div className={`status-overlay ${getStepClass()}`}>
-                                {validationStep === 'validating' && <span className="mini-spinner"></span>}
-                                <span className="status-text">{statusMessage}</span>
-                            </div>
+                            {/* Status messages removed as requested */}
 
                             {/* Indicador de sonrisa */}
                             {requireSmile && validationStep === 'challenge' && (
@@ -436,30 +447,9 @@ const FaceAttendance: React.FC = () => {
                                 </div>
                             )}
 
-                            {/* Toast de éxito / error */}
-                            {validationStep === 'success' && detectedPerson && (
-                                <div className={`result-toast success ${detectedPerson.ya_registrado ? 'warning' : ''}`}>
-                                    <div className="toast-icon">
-                                        <Icon name={detectedPerson.ya_registrado ? "alert-triangle" : "check"} size={20} />
-                                    </div>
-                                    <div className="toast-content">
-                                        <span className="toast-title">{detectedPerson.mensaje}</span>
-                                        <span className="toast-name">{detectedPerson.usuario}</span>
-                                    </div>
-                                </div>
-                            )}
+                            {/* Success toast removed as requested */}
 
-                            {(validationStep === 'no_match' || validationStep === 'error') && (
-                                <div className="result-toast error">
-                                    <div className="toast-icon">
-                                        <Icon name={validationStep === 'no_match' ? "user-x" : "alert-circle"} size={20} />
-                                    </div>
-                                    <div className="toast-content">
-                                        <span className="toast-title">{validationStep === 'no_match' ? 'No reconocido' : 'Error'}</span>
-                                        <span className="toast-name">{errorMessage || 'Intente nuevamente'}</span>
-                                    </div>
-                                </div>
-                            )}
+                            {/* Error toast removed as requested */}
 
                             {/* Guías visuales de esquina */}
                             <div className="corner-guide top-left"></div>
@@ -488,6 +478,119 @@ const FaceAttendance: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal de Confirmación Premium */}
+            {showConfirmModal && previewData && (
+                <div className="confirmation-modal-overlay">
+                    <div className="confirmation-modal">
+                        <div className="modal-header">
+                            <div className="modal-icon">
+                                <Icon name="user-check" size={32} />
+                            </div>
+                            <h3>Confirmar Asistencia</h3>
+                            <button className="close-btn" onClick={() => {
+                                setShowConfirmModal(false);
+                                setValidationStep('detecting');
+                            }}>
+                                <Icon name="x" size={20} />
+                            </button>
+                        </div>
+
+                        <div className="modal-body">
+                            <div className="user-info-large">
+                                <span className="user-label">USUARIO IDENTIFICADO</span>
+                                <h2 className="user-name-highlight">{previewData.usuario}</h2>
+                            </div>
+
+                            <div className="attendance-details-grid">
+                                <div className="detail-item">
+                                    <Icon name="clock" size={18} />
+                                    <div className="detail-content">
+                                        <span className="detail-label">Hora actual</span>
+                                        <span className="detail-value">{previewData.hora}</span>
+                                    </div>
+                                </div>
+                                <div className="detail-item">
+                                    <Icon name="briefcase" size={18} />
+                                    <div className="detail-content">
+                                        <span className="detail-label">Turno</span>
+                                        <span className="detail-value">{previewData.turno}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="modal-footer">
+                            <button
+                                className="modal-btn cancel"
+                                onClick={() => {
+                                    setShowConfirmModal(false);
+                                    setValidationStep('detecting');
+                                }}
+                                disabled={isProcessing}
+                            >
+                                <Icon name="user-x" size={18} />
+                                Cancelar
+                            </button>
+                            <button
+                                className="modal-btn confirm"
+                                onClick={async () => {
+                                    if (!previewData.personal_id) return;
+                                    setIsProcessing(true);
+                                    try {
+                                        const response = await fetch(`${API_BASE_URL}/asistencia/registrar`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                personal_id: previewData.personal_id,
+                                                reconocimiento_valido: true,
+                                                tipo_registro: previewData.tipo_registro,
+                                                marca_tiempo: new Date().toISOString()
+                                            }),
+                                        });
+
+                                        const result = await response.json();
+                                        if (response.ok) {
+                                            setDetectedPerson(result);
+                                            setValidationStep('success');
+                                            setStatusMessage("¡Registrado!");
+                                            setUpdateTrigger(prev => prev + 1);
+                                            setShowConfirmModal(false);
+
+                                            setTimeout(() => {
+                                                setValidationStep('detecting');
+                                                setStatusMessage("Buscando rostro...");
+                                                setDetectedPerson(null);
+                                            }, 8000);
+                                        } else {
+                                            setErrorMessage(result.detail || "Error al registrar");
+                                            setValidationStep('error');
+                                            setShowConfirmModal(false);
+                                            setTimeout(() => setValidationStep('detecting'), 3000);
+                                        }
+                                    } catch (err) {
+                                        setErrorMessage("Error de conexión");
+                                        setValidationStep('error');
+                                        setShowConfirmModal(false);
+                                    } finally {
+                                        setIsProcessing(false);
+                                    }
+                                }}
+                                disabled={isProcessing}
+                            >
+                                {isProcessing ? (
+                                    <span className="mini-spinner"></span>
+                                ) : (
+                                    <>
+                                        <Icon name="check" size={18} />
+                                        Registrar Asistencia
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Columna Derecha: Reloj y Historial */}
             <div className="side-column">

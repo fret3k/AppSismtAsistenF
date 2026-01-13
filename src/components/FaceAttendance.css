@@ -1,4 +1,4 @@
-/* FaceAttendance.css - Diseño Compacto v4.3 - Alignment Fix */
+/* FaceAttendance.css - Diseño Premium v5.0 */
 
 .face-attendance-container {
     display: flex;
@@ -167,7 +167,6 @@
     justify-content: center;
 }
 
-/* Reducción del marco de la cámara al 80% */
 .video-wrapper {
     position: relative;
     width: 80%;
@@ -175,17 +174,14 @@
     aspect-ratio: 4/3;
     max-height: 95%;
     overflow: hidden;
-    /* IMPORTANTE: Recortar video y overlays */
     border-radius: 8px;
     box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
-    /* Sombra para diferenciar del fondo */
 }
 
 video {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* LLENAR el wrapper */
     background: black;
     transform: scaleX(-1);
 }
@@ -197,12 +193,10 @@ video {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Coincidir con video */
-    /* transform: scaleX(-1); REMOVED to fix text inversion */
     transform: none;
 }
 
-/* Guías visuales (ahora relativas al video-wrapper) */
+/* Guías visuales */
 .corner-guide {
     position: absolute;
     width: 30px;
@@ -253,7 +247,7 @@ video {
     opacity: 0.5;
 }
 
-/* Status Overlay (Dentro wrapper) */
+/* Status Overlay */
 .status-overlay {
     position: absolute;
     top: 15px;
@@ -289,7 +283,7 @@ video {
     color: #dc3545;
 }
 
-/* Result Toasts (Dentro wrapper) */
+/* Result Toasts */
 .result-toast {
     position: absolute;
     bottom: 20px;
@@ -365,39 +359,6 @@ video {
     color: #212529;
 }
 
-/* Indicador de Sonrisa (Dentro wrapper) */
-.smile-indicator {
-    position: absolute;
-    bottom: 70px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.6);
-    padding: 6px 12px;
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.smile-bar {
-    width: 60px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-    overflow: hidden;
-}
-
-.smile-fill {
-    height: 100%;
-    background: #ffc107;
-    transition: width 0.1s ease;
-}
-
-.smile-fill.valid {
-    background: #198754;
-}
-
 /* Controles de Cámara */
 .camera-controls {
     align-self: stretch;
@@ -417,10 +378,6 @@ video {
     color: #adb5bd;
 }
 
-.switch-label .label-text {
-    user-select: none;
-}
-
 .action-button {
     background: #4e5d6c;
     border: none;
@@ -436,15 +393,6 @@ video {
     font-size: 0.9rem;
 }
 
-.action-button:hover:not(:disabled) {
-    filter: brightness(1.1);
-}
-
-.action-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 .action-button.start {
     background: #6610f2;
 }
@@ -453,7 +401,207 @@ video {
     background: #dc3545;
 }
 
-/* Animaciones y Media Queries */
+/* --- Confirmation Modal Premium Styles --- */
+.confirmation-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.confirmation-modal {
+    background: white;
+    width: 90%;
+    max-width: 480px;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    animation: scaleIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-header {
+    background: #f8f9fa;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 1px solid #eee;
+    position: relative;
+}
+
+.modal-icon {
+    width: 50px;
+    height: 50px;
+    background: #e7f1ff;
+    color: #0d6efd;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #212529;
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.user-info-large {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.user-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #6c757d;
+    letter-spacing: 1px;
+}
+
+.user-name-highlight {
+    margin: 5px 0 0;
+    font-size: 2rem;
+    color: #0d6efd;
+    font-weight: 800;
+}
+
+.attendance-details-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 15px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+}
+
+.detail-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.detail-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #adb5bd;
+    text-transform: uppercase;
+}
+
+.detail-value {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #343a40;
+}
+
+.status-a-tiempo,
+.status-normal {
+    color: #198754;
+}
+
+.status-tarde {
+    color: #fd7e14;
+}
+
+.status-falta {
+    color: #dc3545;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    background: #f8f9fa;
+    display: flex;
+    gap: 15px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    border: none;
+}
+
+.modal-btn.cancel {
+    background: white;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.modal-btn.cancel:hover {
+    background: #fff5f5;
+    color: #dc3545;
+    border-color: #fab1b1;
+}
+
+.modal-btn.confirm {
+    background: #0d6efd;
+    color: white;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.mini-spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 @keyframes pulse-dot {
     0% {
         transform: scale(0.95);
@@ -502,7 +650,6 @@ video {
 @media (max-width: 992px) {
     .face-attendance-container {
         flex-direction: column;
-        align-items: stretch;
         height: auto;
         overflow: visible;
     }
@@ -513,8 +660,14 @@ video {
         max-width: 100%;
         flex: auto;
     }
+}
 
-    .time-display {
-        font-size: 2.5rem;
+@media (max-width: 480px) {
+    .attendance-details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-footer {
+        flex-direction: column-reverse;
     }
 }

@@ -80,7 +80,8 @@ const AsistenciasPage: React.FC = () => {
                 personal_id: selectedPersonalId,
                 reconocimiento_valido: false, // Manual
                 tipo_registro: tipo,
-                motivo: motivo || undefined
+                motivo: motivo || undefined,
+                marca_tiempo: new Date().toISOString()
             });
             setMarkingMessage({ type: 'success', text: 'Marcación registrada correctamente.' });
             loadControlData(); // Refresh list

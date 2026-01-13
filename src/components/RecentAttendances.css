@@ -183,9 +183,9 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 0.65rem;
-    /* Reducido */
-    color: #adb5bd;
+    font-size: 0.85rem;
+    color: #495057;
+    font-weight: 600;
 }
 
 .meta-icon {
@@ -200,13 +200,11 @@
     gap: 2px;
 }
 
-.time-display {
+.recent-time-display {
     font-family: 'Roboto Mono', monospace;
-    font-size: 0.7rem;
-    /* Reducido */
-    color: #6c757d;
-    font-weight: 500;
-    margin-bottom: 2px;
+    font-size: 0.85rem;
+    color: #343a40;
+    font-weight: 700;
 }
 
 .status-badge {
