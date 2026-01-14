@@ -250,6 +250,11 @@
     color: #1d4ed8;
 }
 
+.badge-blue-light {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
 .badge-yellow {
     background: #fef3c7;
     color: #b45309;

@@ -136,13 +136,22 @@ const MiPerfilPage: React.FC = () => {
                 updateData.password = formData.password;
             }
 
+            // Always check for photo update if user changed it in local state but hasn't saved yet
+            // Wait, I'll handle photo update separately or in this DTO.
+            // The DTO PersonalUpdateDTO currently doesn't have foto_base64.
+            // But PersonalUpdateWithEncodingDTO has it.
+
+            const updatePayload = {
+                ...updateData
+            } as any;
+
             if (Object.keys(updateData).length === 0) {
                 showNotification('No hay cambios que guardar', 'error');
                 setIsLoading(false);
                 return;
             }
 
-            const updatedPersonal = await personalService.update(user.id, updateData);
+            const updatedPersonal = await personalService.update(user.id, updatePayload);
 
             updateUser({
                 nombre: updatedPersonal.nombre,
@@ -192,8 +201,41 @@ const MiPerfilPage: React.FC = () => {
             {/* Profile Card */}
             <div className="profile-card">
                 <div className="profile-header">
-                    <div className="profile-avatar">
-                        {user.nombre?.charAt(0).toUpperCase() || 'U'}
+                    <div className="profile-avatar-container">
+                        <div className="profile-avatar">
+                            {user.foto_base64 ? (
+                                <img src={user.foto_base64} alt="Perfil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                user.nombre?.charAt(0).toUpperCase() || 'U'
+                            )}
+                        </div>
+                        {isEditing && (
+                            <label className="avatar-edit-overlay">
+                                <Icon name="camera" size={24} color="white" />
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ display: 'none' }}
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onloadend = async () => {
+                                                const base64 = reader.result as string;
+                                                try {
+                                                    await personalService.updateFoto(user.id, base64);
+                                                    updateUser({ foto_base64: base64 });
+                                                    showNotification('Foto de perfil actualizada', 'success');
+                                                } catch (err) {
+                                                    showNotification('Error al actualizar foto', 'error');
+                                                }
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                />
+                            </label>
+                        )}
                     </div>
                     <div className="profile-info">
                         <h2>

@@ -16,11 +16,6 @@ const AsistenciasPage: React.FC = () => {
     const [selectedPersonalId, setSelectedPersonalId] = useState<string | null>(null);
     const [filterText, setFilterText] = useState('');
 
-    // Marking Panel State
-    const [currentTime, setCurrentTime] = useState(new Date());
-    const [motivo, setMotivo] = useState('');
-    const [markingMessage, setMarkingMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-
     // Historial Data
     const [history, setHistory] = useState<HistorialAsistenciaDTO[]>([]);
     const [histStartDate, setHistStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -28,12 +23,6 @@ const AsistenciasPage: React.FC = () => {
     const [histUnknownFilter, setHistUnknownFilter] = useState(''); // Text filter for history table if server filter fails or supplements it
 
     // --- Effects ---
-
-    // Clock
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-        return () => clearInterval(timer);
-    }, []);
 
     // Load Data on Tab/Date change
     useEffect(() => {
@@ -68,29 +57,7 @@ const AsistenciasPage: React.FC = () => {
         }
     };
 
-
-
     // --- Actions ---
-
-    const handleMarking = async (tipo: 'ENTRADA_M' | 'SALIDA_M' | 'ENTRADA_T' | 'SALIDA_T') => {
-        if (!selectedPersonalId) return;
-        setMarkingMessage(null);
-        try {
-            await asistenciaService.registrarManual({
-                personal_id: selectedPersonalId,
-                reconocimiento_valido: false, // Manual
-                tipo_registro: tipo,
-                motivo: motivo || undefined,
-                marca_tiempo: new Date().toISOString()
-            });
-            setMarkingMessage({ type: 'success', text: 'Marcación registrada correctamente.' });
-            loadControlData(); // Refresh list
-            setMotivo('');
-        } catch (error: any) {
-            const msg = error.detail || "Error al registrar asistencia";
-            setMarkingMessage({ type: 'error', text: typeof msg === 'string' ? msg : JSON.stringify(msg) });
-        }
-    };
 
     const exportToExcel = () => {
         const dataToExport = activeTab === 'control'
@@ -126,214 +93,284 @@ const AsistenciasPage: React.FC = () => {
 
     const selectedPerson = personalStatuses.find(p => p.id === selectedPersonalId);
 
-    const formatTime = (date: Date) => {
-        return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    };
-
     return (
         <div className="asistencia-page">
-            <div className="page-header" style={{ justifyContent: 'flex-end' }}>
+            <div className="page-header-premium">
+                <div className="header-info">
+                    <h1>Registro y Control</h1>
+                    <p className="subtitle">Gestión y monitoreo de asistencia del personal</p>
+                </div>
                 <div className="header-actions">
-                    <div className="tabs">
-                        <button className={activeTab === 'control' ? 'active' : ''} onClick={() => setActiveTab('control')}>
-                            <Icon name="check-circle" size={18} /> Control Diario
+                    <div className="tabs-premium">
+                        <button
+                            className={`tab-btn ${activeTab === 'control' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('control')}
+                        >
+                            <Icon name="activity" size={20} />
+                            <span>Panel de Control</span>
                         </button>
-                        <button className={activeTab === 'historial' ? 'active' : ''} onClick={() => setActiveTab('historial')}>
-                            <Icon name="list" size={18} /> Historial
+                        <button
+                            className={`tab-btn ${activeTab === 'historial' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('historial')}
+                        >
+                            <Icon name="clock" size={20} />
+                            <span>Historial Completo</span>
                         </button>
                     </div>
                 </div>
             </div>
 
-
-
             {activeTab === 'control' && (
-                <div className="control-layout">
-                    <div className="list-panel">
-                        <div className="panel-header">
-                            <h3>Lista de Personal</h3>
-                            <div className="panel-controls">
-                                <input
-                                    type="date"
-                                    value={currentDate}
-                                    onChange={(e) => setCurrentDate(e.target.value)}
-                                    className="date-input"
-                                />
-                                <button className="btn-today" onClick={() => setCurrentDate(new Date().toISOString().split('T')[0])}>Hoy</button>
-                            </div>
-                            <div className="search-box">
-                                <Icon name="search" size={16} />
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por nombre o DNI..."
-                                    value={filterText}
-                                    onChange={(e) => setFilterText(e.target.value)}
-                                />
-                            </div>
-                        </div>
-                        <div className="personal-list">
-                            {loading ? <div className="loading">Cargando...</div> : filteredStatuses.map(p => (
-                                <div
-                                    key={p.id}
-                                    className={`personal-item ${selectedPersonalId === p.id ? 'selected' : ''}`}
-                                    onClick={() => setSelectedPersonalId(p.id)}
-                                >
-                                    <div className="pi-info">
-                                        <h4>{p.nombre_completo}</h4>
-                                        <span className="pi-dni">{p.dni}</span>
+                <>
+                    <div className="control-layout-premium">
+                        <div className="list-panel-premium">
+                            <div className="panel-header-top">
+                                <div className="date-picker-area">
+                                    <div className="input-with-icon">
+                                        <Icon name="calendar" size={16} />
+                                        <input
+                                            type="date"
+                                            value={currentDate}
+                                            onChange={(e) => setCurrentDate(e.target.value)}
+                                        />
                                     </div>
-                                    <div className="pi-status">
-                                        <span className={`status-badge ${p.estado_dia.toLowerCase()}`}>
-                                            {p.estado_dia}
-                                        </span>
-                                        {(() => {
-                                            const entries = p.registros
-                                                .filter(r => r.tipo_registro.includes('ENTRADA'))
-                                                .sort((a, b) => new Date(a.marca_tiempo).getTime() - new Date(b.marca_tiempo).getTime());
-                                            const firstEntry = entries.length > 0 ? entries[0] : null;
-                                            return firstEntry ? (
-                                                <span className="last-mark" style={{ color: '#2e7d32' }}>
-                                                    Ent: {new Date(firstEntry.marca_tiempo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            ) : null;
-                                        })()}
-                                        {p.ultima_marcacion && <span className="last-mark">Ult: {new Date(p.ultima_marcacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>}
-                                    </div>
+                                    <button className="btn-today-minimal" onClick={() => setCurrentDate(new Date().toISOString().split('T')[0])}>
+                                        Hoy
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="action-panel">
-                        {selectedPerson ? (
-                            <div className="marking-card">
-                                <div className="mc-header">
-                                    <h2>{selectedPerson.nombre_completo}</h2>
-                                    <span className="mc-dni">DNI: {selectedPerson.dni}</span>
-                                </div>
-                                <div className="digital-clock">
-                                    {formatTime(currentTime)}
-                                </div>
-
-                                {markingMessage && (
-                                    <div className={`alert ${markingMessage.type}`}>
-                                        {markingMessage.text}
-                                    </div>
-                                )}
-
-                                <div className="marking-buttons">
-                                    <div className="mb-row">
-                                        <span>Turno Mañana</span>
-                                        <div className="btn-group">
-                                            <button className="btn-mark entrada" onClick={() => handleMarking('ENTRADA_M')}>ENTRADA</button>
-                                            <button className="btn-mark salida" onClick={() => handleMarking('SALIDA_M')}>SALIDA</button>
-                                        </div>
-                                    </div>
-                                    <div className="mb-row">
-                                        <span>Turno Tarde</span>
-                                        <div className="btn-group">
-                                            <button className="btn-mark entrada" onClick={() => handleMarking('ENTRADA_T')}>ENTRADA</button>
-                                            <button className="btn-mark salida" onClick={() => handleMarking('SALIDA_T')}>SALIDA</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="motive-field">
-                                    <label>Motivo (Opcional):</label>
+                                <div className="search-bar-premium">
+                                    <Icon name="search" size={18} />
                                     <input
                                         type="text"
-                                        value={motivo}
-                                        onChange={(e) => setMotivo(e.target.value)}
-                                        placeholder="Ej: Salida médica, reunión externa..."
+                                        placeholder="DNI o nombres..."
+                                        value={filterText}
+                                        onChange={(e) => setFilterText(e.target.value)}
                                     />
+                                    {filterText && (
+                                        <button className="clear-search" onClick={() => setFilterText('')}>
+                                            <Icon name="x" size={14} />
+                                        </button>
+                                    )}
                                 </div>
+                            </div>
 
-                                <div className="todays-records">
-                                    <h4>Registros de Hoy</h4>
-                                    <ul>
-                                        {selectedPerson.registros?.length > 0 ? selectedPerson.registros.map((r: any) => (
-                                            <li key={r.marca_tiempo}>
-                                                <strong>{r.tipo_registro}</strong> - {new Date(r.marca_tiempo).toLocaleTimeString()}
-                                                <span className={`mini-badge ${r.estado === 'TARDE' ? 'tarde' : 'ok'}`}>{r.estado}</span>
-                                            </li>
-                                        )) : <li className="empty">Sin registros</li>}
-                                    </ul>
+                            <div className="personal-list-premium">
+                                {loading && personalStatuses.length === 0 ? (
+                                    <div className="loading-state-simple">
+                                        <div className="spinner"></div>
+                                        <span>Cargando reportes...</span>
+                                    </div>
+                                ) : filteredStatuses.length > 0 ? (
+                                    filteredStatuses.map(p => (
+                                        <div
+                                            key={p.id}
+                                            className={`personal-card-item ${selectedPersonalId === p.id ? 'active' : ''}`}
+                                            onClick={() => setSelectedPersonalId(p.id)}
+                                        >
+                                            <div className="p-avatar">
+                                                {p.nombre_completo.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                            </div>
+                                            <div className="p-content">
+                                                <div className="p-main-info">
+                                                    <h4>{p.nombre_completo}</h4>
+                                                    <span className="p-dni-tag">{p.dni}</span>
+                                                </div>
+                                                <div className="p-status-area">
+                                                    <span className={`p-pill ${p.estado_dia.toLowerCase()}`}>
+                                                        {p.estado_dia}
+                                                    </span>
+                                                    {p.ultima_marcacion && (
+                                                        <span className="p-time-tag">
+                                                            <Icon name="clock" size={10} />
+                                                            {new Date(p.ultima_marcacion).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="p-chevron">
+                                                <Icon name="chevron-right" size={18} />
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="no-results-state">
+                                        <Icon name="search" size={40} />
+                                        <p>No se encontraron coincidencias para "{filterText}"</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="detail-panel-premium">
+                            {selectedPerson ? (
+                                <div className="detail-card-premium">
+                                    <div className="detail-header">
+                                        <div className="detail-avatar-large">
+                                            {selectedPerson.nombre_completo.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                        </div>
+                                        <div className="detail-title-info">
+                                            <h2>{selectedPerson.nombre_completo}</h2>
+                                            <span className="detail-dni-subtitle">Documento Nacional de Identidad: <strong>{selectedPerson.dni}</strong></span>
+                                        </div>
+                                    </div>
+
+                                    <div className="detail-stats-row">
+                                        <div className="d-stat-box">
+                                            <span className="d-stat-label">Estado del Día</span>
+                                            <span className={`p-pill large ${selectedPerson.estado_dia.toLowerCase()}`}>
+                                                {selectedPerson.estado_dia}
+                                            </span>
+                                        </div>
+                                        <div className="d-stat-box">
+                                            <span className="d-stat-label">Horas Trabajadas</span>
+                                            <span className="d-stat-value">{selectedPerson.horas_trabajadas || '0.0h'}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="daily-timeline">
+                                        <div className="timeline-header">
+                                            <h3><Icon name="list" size={18} /> Historial del Día</h3>
+                                            <span className="date-tag">{currentDate}</span>
+                                        </div>
+                                        <div className="timeline-list">
+                                            {selectedPerson.registros?.length > 0 ? (
+                                                selectedPerson.registros.sort((a, b) => new Date(a.marca_tiempo).getTime() - new Date(b.marca_tiempo).getTime()).map((r: any, idx) => (
+                                                    <div key={idx} className="timeline-item-premium">
+                                                        <div className="t-time">
+                                                            {new Date(r.marca_tiempo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
+                                                        <div className="t-marker">
+                                                            <div className={`t-dot ${r.estado === 'TARDE' ? 'warning' : 'success'}`}></div>
+                                                            <div className="t-line"></div>
+                                                        </div>
+                                                        <div className="t-content">
+                                                            <div className="t-type">{r.tipo_registro.replace('_', ' ')}</div>
+                                                            <div className={`t-status-text ${r.estado.toLowerCase()}`}>
+                                                                {r.estado}
+                                                            </div>
+                                                            {r.motivo && <div className="t-motive">"{r.motivo}"</div>}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="timeline-empty">
+                                                    <Icon name="calendar" size={32} />
+                                                    <p>Sin registros detectados para este día.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="detail-footer-actions">
+                                        <button className="btn-secondary-outline">
+                                            <Icon name="user" size={16} /> Ver Perfil Completo
+                                        </button>
+                                        <button className="btn-secondary-outline" onClick={exportToExcel}>
+                                            <Icon name="download" size={16} /> Exportar Reporte
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="empty-state">
-                                <Icon name="user-check" size={48} color="#ccc" />
-                                <p>Selecciona un personal de la lista para registrar asistencia o ver sus detalles.</p>
-                            </div>
-                        )}
-                        <div className="action-panel-footer">
-                            <button className="btn-export" onClick={exportToExcel}>
-                                <Icon name="download" size={16} /> Exportar Reporte del Día
-                            </button>
+                            ) : (
+                                <div className="empty-detail-state">
+                                    <div className="empty-illustration">
+                                        <div className="pulse-circle"></div>
+                                        <Icon name="target" size={48} />
+                                    </div>
+                                    <h3>Seleccione un registro</h3>
+                                    <p>Haga clic en un empleado de la lista para visualizar su actividad detallada y estadísticas del día.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
-                </div>
+                </>
             )}
 
             {activeTab === 'historial' && (
-                <div className="historial-layout">
-                    <div className="filters-bar">
-                        <div className="date-range">
-                            <label>Desde:</label>
-                            <input type="date" value={histStartDate} onChange={e => setHistStartDate(e.target.value)} />
-                            <label>Hasta:</label>
-                            <input type="date" value={histEndDate} onChange={e => setHistEndDate(e.target.value)} />
+                <div className="historial-layout-premium">
+                    <div className="historial-filters-premium">
+                        <div className="filter-group">
+                            <label><Icon name="filter" size={14} /> Rango de Fechas</label>
+                            <div className="date-range-inputs">
+                                <input type="date" value={histStartDate} onChange={e => setHistStartDate(e.target.value)} />
+                                <span className="range-sep">-</span>
+                                <input type="date" value={histEndDate} onChange={e => setHistEndDate(e.target.value)} />
+                            </div>
                         </div>
-                        <div className="search-filter">
-                            <input
-                                type="text"
-                                placeholder="Filtrar en resultados..."
-                                value={histUnknownFilter}
-                                onChange={(e) => setHistUnknownFilter(e.target.value)}
-                            />
+                        <div className="filter-group flex-1">
+                            <label><Icon name="search" size={14} /> Búsqueda Rápida</label>
+                            <div className="search-input-wrapper">
+                                <input
+                                    type="text"
+                                    placeholder="DNI o nombres..."
+                                    value={histUnknownFilter}
+                                    onChange={(e) => setHistUnknownFilter(e.target.value)}
+                                />
+                            </div>
                         </div>
-                        <button className="btn-export secondary" onClick={exportToExcel}>
-                            <Icon name="download" size={16} /> Exportar Excel
+                        <button className="btn-premium-export" onClick={exportToExcel}>
+                            <Icon name="file-text" size={18} />
+                            <span>Exportar Excel</span>
                         </button>
                     </div>
 
-                    <div className="table-container">
-                        <table className="data-table">
+                    <div className="table-wrapper-premium">
+                        <table className="table-premium">
                             <thead>
                                 <tr>
                                     <th>Fecha</th>
                                     <th>Hora</th>
-                                    <th>Personal</th>
+                                    <th>Nombres</th>
                                     <th>DNI</th>
-                                    <th>Tipo</th>
-                                    <th>Estado</th>
-                                    <th>Motivo</th>
+                                    <th>Tipo de Registro</th>
+                                    <th>Estado de Marcación</th>
+                                    <th>Observaciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
-                                    <tr><td colSpan={7} className="loading-cell">Cargando datos...</td></tr>
-                                ) : history.filter(h =>
-                                    h.nombre_personal.toLowerCase().includes(histUnknownFilter.toLowerCase()) ||
-                                    h.dni.includes(histUnknownFilter)
-                                ).map((row, idx) => (
-                                    <tr key={idx}>
-                                        <td>{row.fecha}</td>
-                                        <td>{new Date(row.marca_tiempo).toLocaleTimeString()}</td>
-                                        <td>{row.nombre_personal}</td>
-                                        <td>{row.dni}</td>
-                                        <td>{row.tipo_registro}</td>
-                                        <td>
-                                            <span className={`status-pill ${row.estado.replace(/\s+/g, '_').toLowerCase()}`}>
-                                                {row.estado}
-                                            </span>
+                                    <tr>
+                                        <td colSpan={7}>
+                                            <div className="table-loading">
+                                                <div className="spinner"></div>
+                                                <span>Sincronizando registros...</span>
+                                            </div>
                                         </td>
-                                        <td>{row.motivo || '-'}</td>
                                     </tr>
-                                ))}
+                                ) : history.length > 0 ? (
+                                    history.filter(h =>
+                                        h.nombre_personal.toLowerCase().includes(histUnknownFilter.toLowerCase()) ||
+                                        h.dni.includes(histUnknownFilter)
+                                    ).map((row, idx) => (
+                                        <tr key={idx}>
+                                            <td className="w-120">{row.fecha}</td>
+                                            <td className="w-100 font-mono">{new Date(row.marca_tiempo).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                            <td className="font-semibold">{row.nombre_personal}</td>
+                                            <td className="text-secondary">{row.dni}</td>
+                                            <td>
+                                                <span className={`type-tag ${row.tipo_registro.toLowerCase()}`}>
+                                                    {row.tipo_registro.replace('_', ' ')}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`status-pill-premium ${row.estado.replace(/\s+/g, '_').toLowerCase()}`}>
+                                                    {row.estado}
+                                                </span>
+                                            </td>
+                                            <td className="text-italic">{row.motivo || '-'}</td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={7}>
+                                            <div className="table-empty-state">
+                                                <Icon name="database" size={40} />
+                                                <p>No se encontraron registros de asistencia en el periodo seleccionado.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
-                        {!loading && history.length === 0 && <div className="no-data">No hay registros en este rango</div>}
                     </div>
                 </div>
             )}

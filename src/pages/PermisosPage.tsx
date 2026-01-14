@@ -208,47 +208,6 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                 </div>
             )}
 
-            {/* Stats Cards (Solo Admin) */}
-            {mode === 'admin' && (
-                <div className="permisos-stats">
-                    <div className="stat-card">
-                        <div className="stat-card-icon total">
-                            <Icon name="file-text" size={24} color="#1d4ed8" />
-                        </div>
-                        <div className="stat-card-content">
-                            <h3>Total</h3>
-                            <span className="number">{stats.total}</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-card-icon pending">
-                            <Icon name="clock" size={24} color="#b45309" />
-                        </div>
-                        <div className="stat-card-content">
-                            <h3>Pendientes</h3>
-                            <span className="number">{stats.pending}</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-card-icon approved">
-                            <Icon name="check-circle" size={24} color="#16a34a" />
-                        </div>
-                        <div className="stat-card-content">
-                            <h3>Aprobadas</h3>
-                            <span className="number">{stats.approved}</span>
-                        </div>
-                    </div>
-                    <div className="stat-card">
-                        <div className="stat-card-icon denied">
-                            <Icon name="x-circle" size={24} color="#dc2626" />
-                        </div>
-                        <div className="stat-card-content">
-                            <h3>Denegadas</h3>
-                            <span className="number">{stats.denied}</span>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Action Bar */}
             <div className="action-bar">

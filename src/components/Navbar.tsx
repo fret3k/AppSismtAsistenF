@@ -5,7 +5,7 @@ import './Navbar.css';
 import logo from '../assets/logo_corte.jpg';
 
 const Navbar: React.FC = () => {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     return (
         <nav className="navbar">
@@ -25,9 +25,14 @@ const Navbar: React.FC = () => {
                 <div className="navbar-actions">
                     {/* Mostrar botón de Dashboard si está autenticado, sino mostrar Iniciar Sesión */}
                     {isAuthenticated ? (
-                        <Link to="/dashboard" className="btn-navbar">
-                            Dashboard
-                        </Link>
+                        <div className="navbar-user">
+                            {user?.foto_base64 && (
+                                <img src={user.foto_base64} alt="Perfil" className="navbar-avatar-min" />
+                            )}
+                            <Link to="/dashboard" className="btn-navbar">
+                                Dashboard
+                            </Link>
+                        </div>
                     ) : (
                         <Link to="/login" className="btn-navbar">
                             Iniciar Sesión

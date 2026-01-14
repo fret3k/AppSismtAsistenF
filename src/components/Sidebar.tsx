@@ -135,7 +135,11 @@ const Sidebar: React.FC = () => {
                 <div className="sidebar-footer">
                     <div className="user-info">
                         <div className="user-avatar">
-                            {user?.nombre?.charAt(0).toUpperCase() || 'U'}
+                            {user?.foto_base64 ? (
+                                <img src={user.foto_base64} alt="Perfil" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                            ) : (
+                                user?.nombre?.charAt(0).toUpperCase() || 'U'
+                            )}
                         </div>
                         <div className="user-details">
                             <h4>

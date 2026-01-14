@@ -5,7 +5,8 @@ import type {
     PersonalUpdateDTO,
     PersonalRegisterWithEncodingDTO,
     PersonalRegisterWithEncodingResponse,
-    PersonalUpdateWithEncodingDTO
+    PersonalUpdateWithEncodingDTO,
+    FotoPerfilResponse
 } from '../types';
 import { encodingFaceService } from './encodingFaceService';
 
@@ -60,10 +61,19 @@ export const personalService = {
     // Update personal with encoding handling
     async updateWithEncoding(id: string, data: PersonalUpdateWithEncodingDTO): Promise<PersonalResponseDTO> {
         // 1. Update personal details
-        const { embedding, ...personalData } = data;
+        const { embedding, foto_base64, ...personalData } = data;
         const updatedPersonal = await this.update(id, personalData);
 
-        // 2. If embedding is provided, update it
+        // 2. If photo is provided, update it
+        if (foto_base64) {
+            try {
+                await this.updateFoto(id, foto_base64);
+            } catch (error) {
+                console.error('Error updating profile photo:', error);
+            }
+        }
+
+        // 3. If embedding is provided, update it
         if (embedding && embedding.length > 0) {
             try {
                 // Get existing encodings
@@ -97,6 +107,23 @@ export const personalService = {
             `/personal/${id}`,
             {
                 method: 'DELETE',
+            },
+            true
+        );
+    },
+
+    // Get profile photo - GET /personal/{id}/foto
+    async getFoto(id: string): Promise<FotoPerfilResponse> {
+        return await apiRequest<FotoPerfilResponse>(`/personal/${id}/foto`, {}, true);
+    },
+
+    // Update profile photo - PATCH /personal/{id}/foto
+    async updateFoto(id: string, foto_base64: string): Promise<any> {
+        return await apiRequest<any>(
+            `/personal/${id}/foto`,
+            {
+                method: 'PATCH',
+                body: JSON.stringify({ foto_base64 }),
             },
             true
         );

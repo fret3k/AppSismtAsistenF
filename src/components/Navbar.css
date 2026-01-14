@@ -75,8 +75,22 @@
 .navbar-image {
     width: auto;
     height: 40px;
-    /* Reducido de 60px */
     object-fit: contain;
+}
+
+.navbar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.navbar-avatar-min {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 

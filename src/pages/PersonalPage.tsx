@@ -115,6 +115,10 @@ const PersonalPage: React.FC = () => {
                     updateData.embedding = Array.from(faceDescriptor);
                 }
 
+                if (faceImageUrl) {
+                    updateData.foto_base64 = faceImageUrl;
+                }
+
                 await personalService.updateWithEncoding(editingId, updateData);
                 setSuccess(`✅ Personal "${formData.nombre}" actualizado exitosamente.`);
             } else {
@@ -128,6 +132,7 @@ const PersonalPage: React.FC = () => {
                     password: formData.password,
                     es_administrador: formData.es_administrador,
                     embedding: Array.from(faceDescriptor!), // Assert non-null because of check above
+                    foto_base64: faceImageUrl || undefined,
                 });
                 setSuccess(`✅ Personal "${formData.nombre}" registrado exitosamente.`);
             }
@@ -381,6 +386,7 @@ const PersonalPage: React.FC = () => {
                     <table className="personal-table">
                         <thead>
                             <tr>
+                                <th>Foto</th>
                                 <th>DNI</th>
                                 <th>Nombre Completo</th>
                                 <th>Email</th>
@@ -391,6 +397,15 @@ const PersonalPage: React.FC = () => {
                         <tbody>
                             {personal.map((p) => (
                                 <tr key={p.id}>
+                                    <td>
+                                        <div className="table-avatar">
+                                            {p.foto_base64 ? (
+                                                <img src={p.foto_base64} alt="Foto" />
+                                            ) : (
+                                                <Icon name="user" size={20} color="#6c757d" />
+                                            )}
+                                        </div>
+                                    </td>
                                     <td>{p.dni}</td>
                                     <td>{`${p.nombre} ${p.apellido_paterno} ${p.apellido_materno}`}</td>
                                     <td>{p.email}</td>

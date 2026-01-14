@@ -66,13 +66,13 @@ export const ReporteMensualPage = () => {
             "N°": item.numero,
             "DNI": item.dni,
             "Apellidos y Nombres": item.apellidos_y_nombres,
-            "Días Lab.": item.dias_laborables,
             "Asistencias": item.dias_asistidos,
             "Tardanzas": item.tardanzas,
             "Faltas": item.faltas,
             "Aus. Just.": item.ausencias_justificadas,
             "Sal. Ant.": item.salidas_anticipadas,
-            "H. Extra": item.horas_sobretiempo,
+            "H. Trabajadas": item.horas_trabajadas.toFixed(2),
+            "H. Total": item.total_horas.toFixed(2),
             "Observaciones": item.observaciones
         })));
 
@@ -98,18 +98,18 @@ export const ReporteMensualPage = () => {
         doc.text(`Año: ${anio}`, 14, 38);
         doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 44);
 
-        const tableColumn = ["N°", "DNI", "Nombres", "D. Lab", "Asist", "Tard", "Faltas", "Aus. J", "Sal. A", "H. Ext", "Obs"];
+        const tableColumn = ["N°", "DNI", "Nombres", "Asist", "Tard", "Faltas", "Aus. J", "Sal. A", "H. Trab", "H. Total", "Obs"];
         const tableRows = reporte.map(item => [
             item.numero,
             item.dni,
             item.apellidos_y_nombres,
-            item.dias_laborables,
             item.dias_asistidos,
             item.tardanzas,
             item.faltas,
             item.ausencias_justificadas,
             item.salidas_anticipadas,
-            item.horas_sobretiempo.toFixed(1),
+            item.horas_trabajadas.toFixed(1),
+            item.total_horas.toFixed(1),
             item.observaciones
         ]);
 
@@ -216,13 +216,13 @@ export const ReporteMensualPage = () => {
                                 <th>N°</th>
                                 <th>DNI</th>
                                 <th>Apellidos y Nombres</th>
-                                <th className="center">D. Lab</th>
                                 <th className="center">Asist</th>
                                 <th className="center">Tard</th>
                                 <th className="center">Faltas</th>
                                 <th className="center">Aus. Just</th>
                                 <th className="center">Sal. Ant</th>
-                                <th className="center">H. Ext</th>
+                                <th className="center">H. Trab</th>
+                                <th className="center">H. Total</th>
                                 <th>Observaciones</th>
                             </tr>
                         </thead>
@@ -233,7 +233,6 @@ export const ReporteMensualPage = () => {
                                         <td>{item.numero}</td>
                                         <td className="mono">{item.dni}</td>
                                         <td className="bold">{item.apellidos_y_nombres}</td>
-                                        <td className="center">{item.dias_laborables}</td>
                                         <td className="center">
                                             <span className="badge badge-blue">{item.dias_asistidos}</span>
                                         </td>
@@ -266,8 +265,15 @@ export const ReporteMensualPage = () => {
                                             )}
                                         </td>
                                         <td className="center">
-                                            {item.horas_sobretiempo > 0 ? (
-                                                <span className="badge badge-purple">{item.horas_sobretiempo.toFixed(1)}h</span>
+                                            {item.horas_trabajadas > 0 ? (
+                                                <span className="badge badge-blue-light">{item.horas_trabajadas.toFixed(1)}h</span>
+                                            ) : (
+                                                <span className="badge-empty">-</span>
+                                            )}
+                                        </td>
+                                        <td className="center">
+                                            {item.total_horas > 0 ? (
+                                                <span className="badge badge-purple">{item.total_horas.toFixed(1)}h</span>
                                             ) : (
                                                 <span className="badge-empty">-</span>
                                             )}

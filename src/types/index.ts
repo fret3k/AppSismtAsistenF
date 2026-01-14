@@ -25,6 +25,7 @@ export interface PersonalResponseDTO {
     apellido_materno: string;
     email: string;
     es_administrador: boolean;
+    foto_base64?: string;
 }
 
 export interface PersonalCreateDTO {
@@ -57,6 +58,7 @@ export interface PersonalRegisterWithEncodingDTO {
     es_administrador?: boolean;
     password: string;
     embedding: number[]; // Face encoding vector (128-dimensional for face-api.js)
+    foto_base64?: string; // Captured face image in Base64
 }
 
 export interface PersonalRegisterWithEncodingResponse {
@@ -67,6 +69,7 @@ export interface PersonalRegisterWithEncodingResponse {
 
 export interface PersonalUpdateWithEncodingDTO extends PersonalUpdateDTO {
     embedding?: number[]; // Optional new face encoding
+    foto_base64?: string; // Optional new face image
 }
 
 // Alias for backward compatibility
@@ -81,6 +84,15 @@ export interface User {
     apellido_materno: string;
     rol: 'admin' | 'user';
     es_administrador: boolean;
+    foto_base64?: string;
+}
+
+export interface FotoPerfilResponse {
+    id: string;
+    personal_id: string;
+    foto_base64: string;
+    created_at: string;
+    updated_at: string;
 }
 
 // ============ Encoding Face Types ============
@@ -198,5 +210,7 @@ export interface ReporteMensualItem {
     ausencias_justificadas: number;
     salidas_anticipadas: number;
     horas_sobretiempo: number;
+    horas_trabajadas: number;
+    total_horas: number;
     observaciones: string;
 }
