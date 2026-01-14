@@ -2,6 +2,7 @@ import { apiRequest } from './api';
 
 // Types for schedule management - adjusted to actual API response
 export interface HorarioEntrada {
+    entrada: string;       // Official entry time
     a_tiempo: string;      // On-time limit (HH:MM format)
     tarde: string;         // Late threshold
 }

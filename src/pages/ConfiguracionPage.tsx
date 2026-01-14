@@ -25,10 +25,10 @@ const defaultSettings: AppSettings = {
 
 // Valores por defecto para horarios
 const defaultHorarios: Horarios = {
-    ENTRADA_M: { a_tiempo: '08:15', tarde: '08:30' },
+    ENTRADA_M: { entrada: '08:00', a_tiempo: '08:15', tarde: '08:30' },
     SALIDA_M: { limite_temprano: '13:30' },
-    ENTRADA_T: { a_tiempo: '14:15', tarde: '14:30' },
-    SALIDA_T: { limite_temprano: '18:00' },
+    ENTRADA_T: { entrada: '14:30', a_tiempo: '14:45', tarde: '15:00' },
+    SALIDA_T: { limite_temprano: '17:00' },
 };
 
 // Funciones para guardar/leer configuración local
@@ -112,7 +112,7 @@ const ConfiguracionPage: React.FC = () => {
     // Manejar cambios en horarios de entrada
     const handleEntradaChange = (
         turno: 'ENTRADA_M' | 'ENTRADA_T',
-        campo: 'a_tiempo' | 'tarde',
+        campo: 'entrada' | 'a_tiempo' | 'tarde',
         value: string
     ) => {
         setHorarios(prev => ({
@@ -309,6 +309,14 @@ const ConfiguracionPage: React.FC = () => {
                                             <Icon name="log-in" size={20} color="#28a745" strokeWidth={2.5} /> Entrada
                                         </div>
                                         <div className="horario-field">
+                                            <label>Hora de Entrada</label>
+                                            <input
+                                                type="time"
+                                                value={formatTimeForInput(horarios.ENTRADA_M.entrada)}
+                                                onChange={(e) => handleEntradaChange('ENTRADA_M', 'entrada', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="horario-field">
                                             <label>A tiempo hasta</label>
                                             <input
                                                 type="time"
@@ -352,6 +360,14 @@ const ConfiguracionPage: React.FC = () => {
                                     <div className="horario-column">
                                         <div className="horario-column-title">
                                             <Icon name="log-in" size={20} color="#28a745" strokeWidth={2.5} /> Entrada
+                                        </div>
+                                        <div className="horario-field">
+                                            <label>Hora de Entrada</label>
+                                            <input
+                                                type="time"
+                                                value={formatTimeForInput(horarios.ENTRADA_T.entrada)}
+                                                onChange={(e) => handleEntradaChange('ENTRADA_T', 'entrada', e.target.value)}
+                                            />
                                         </div>
                                         <div className="horario-field">
                                             <label>A tiempo hasta</label>

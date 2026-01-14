@@ -6,6 +6,7 @@ import Icon from '../components/Icon';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { REPORT_IMAGES } from '../utils/reportImages';
 import './ReporteMensualPage.css';
 
 const MESES = [
@@ -71,8 +72,8 @@ export const ReporteMensualPage = () => {
             "Faltas": item.faltas,
             "Aus. Just.": item.ausencias_justificadas,
             "Sal. Ant.": item.salidas_anticipadas,
+            "H. Ext": item.horas_sobretiempo.toFixed(2),
             "H. Trabajadas": item.horas_trabajadas.toFixed(2),
-            "H. Total": item.total_horas.toFixed(2),
             "Observaciones": item.observaciones
         })));
 
@@ -89,16 +90,54 @@ export const ReporteMensualPage = () => {
         const doc = new jsPDF();
         const mesNombre = MESES.find(m => m.value === mes)?.label;
 
-        doc.setFontSize(18);
-        doc.text("Reporte General de Asistencia", 14, 22);
+        // --- CABECERA PERSONALIZADA ---
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const centerX = pageWidth / 2;
 
+        try {
+            // 1. Escudo (Izquierda)
+            if (REPORT_IMAGES.ESCUDO_PERU) {
+                doc.addImage(REPORT_IMAGES.ESCUDO_PERU, 'PNG', 14, 10, 18, 20); // x, y, w, h
+            }
+
+            // 2. Logo PJ (Centro - Arriba)
+            if (REPORT_IMAGES.LOGO_PJ) {
+                doc.addImage(REPORT_IMAGES.LOGO_PJ, 'PNG', centerX - 10, 8, 20, 18);
+            }
+
+            // 3. Logo Bicentenario (Derecha)
+            if (REPORT_IMAGES.LOGO_BICENTENARIO) {
+                doc.addImage(REPORT_IMAGES.LOGO_BICENTENARIO, 'PNG', pageWidth - 40, 10, 25, 12);
+            }
+        } catch (error) {
+            console.error("Error adding images to PDF:", error);
+        }
+
+        // Títulos Centrales (Con más espaciado)
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Corte Superior de Justicia de Apurimac", centerX, 35, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.text("Administracion del Modulo Penal de Abancay", centerX, 42, { align: 'center' });
+
+        // Frase "Decenio..."
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(80);
+        doc.text('"Decenio de la Igualdad de oportunidades para mujeres y hombres"', centerX, 52, { align: 'center' });
+        doc.text('"Año de la recuperación y consolidación de la economía peruana"', centerX, 57, { align: 'center' });
+
+        // Lugar y Fecha
+        const fechaActual = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        doc.setFont("helvetica", "normal");
         doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`Mes: ${mesNombre}`, 14, 32);
-        doc.text(`Año: ${anio}`, 14, 38);
-        doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 44);
+        doc.setTextColor(0); // Negro
+        doc.text(`Abancay, ${fechaActual}`, 14, 68);
 
-        const tableColumn = ["N°", "DNI", "Nombres", "Asist", "Tard", "Faltas", "Aus. J", "Sal. A", "H. Trab", "H. Total", "Obs"];
+        // --- TABLA ---
+        const tableColumn = ["N°", "DNI", "Nombres", "Asist", "Tard", "Faltas", "Aus. J", "Sal. A", "H. Ext", "H. Trab", "Obs"];
         const tableRows = reporte.map(item => [
             item.numero,
             item.dni,
@@ -108,17 +147,42 @@ export const ReporteMensualPage = () => {
             item.faltas,
             item.ausencias_justificadas,
             item.salidas_anticipadas,
+            item.horas_sobretiempo.toFixed(1),
             item.horas_trabajadas.toFixed(1),
-            item.total_horas.toFixed(1),
             item.observaciones
         ]);
 
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: 50,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [102, 126, 234] }
+            startY: 75,
+            theme: 'grid',
+            styles: {
+                fontSize: 9,
+                cellPadding: 3, // Espaciado interno para simular 1.5
+                valign: 'middle'
+            },
+            headStyles: {
+                fillColor: [102, 126, 234], // Azulito PJ
+                textColor: 255,
+                halign: 'center',
+                valign: 'middle',
+                minCellHeight: 12
+            },
+            bodyStyles: {
+                minCellHeight: 10 // Altura mínima de fila
+            },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 10 }, // N°
+                1: { halign: 'center' }, // DNI
+                3: { halign: 'center' }, // Asist
+                4: { halign: 'center' }, // Tard
+                5: { halign: 'center' }, // Faltas
+                6: { halign: 'center' }, // Aus. J
+                7: { halign: 'center' }, // Sal. A
+                8: { halign: 'center' }, // H. Ext
+                9: { halign: 'center' }, // H. Trab
+            }
         });
 
         doc.save(`Reporte_Asistencia_${mesNombre}_${anio}.pdf`);
@@ -221,8 +285,8 @@ export const ReporteMensualPage = () => {
                                 <th className="center">Faltas</th>
                                 <th className="center">Aus. Just</th>
                                 <th className="center">Sal. Ant</th>
+                                <th className="center">H. Ext</th>
                                 <th className="center">H. Trab</th>
-                                <th className="center">H. Total</th>
                                 <th>Observaciones</th>
                             </tr>
                         </thead>
@@ -265,15 +329,15 @@ export const ReporteMensualPage = () => {
                                             )}
                                         </td>
                                         <td className="center">
-                                            {item.horas_trabajadas > 0 ? (
-                                                <span className="badge badge-blue-light">{item.horas_trabajadas.toFixed(1)}h</span>
+                                            {item.horas_sobretiempo > 0 ? (
+                                                <span className="badge badge-purple">{item.horas_sobretiempo.toFixed(1)}h</span>
                                             ) : (
                                                 <span className="badge-empty">-</span>
                                             )}
                                         </td>
                                         <td className="center">
-                                            {item.total_horas > 0 ? (
-                                                <span className="badge badge-purple">{item.total_horas.toFixed(1)}h</span>
+                                            {item.horas_trabajadas > 0 ? (
+                                                <span className="badge badge-blue-light">{item.horas_trabajadas.toFixed(1)}h</span>
                                             ) : (
                                                 <span className="badge-empty">-</span>
                                             )}
