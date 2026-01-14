@@ -286,7 +286,7 @@ const MisAsistenciasPage: React.FC = () => {
                                         </td>
                                         <td>
                                             <span className={`turno-badge ${asistencia.is_falta ? 'falta' : ''}`}>
-                                                {asistencia.tipo_registro}
+                                                {asistencia.tipo_registro.includes('_M') ? 'Turno Mañana' : asistencia.tipo_registro.includes('_T') ? 'Turno Tarde' : asistencia.tipo_registro}
                                             </span>
                                         </td>
                                         <td>

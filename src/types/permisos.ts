@@ -9,6 +9,9 @@ export interface SolicitudAusencia {
     razon: string;
     estado_solicitud: 'PENDIENTE' | 'APROBADA' | 'DENEGADA' | 'ANULADA';
     fecha_solicitud: string; // ISO Datetime
+    // Optional additional fields returned by the API
+    numero_boleta?: string;
+    codigos?: string[];
 }
 
 export interface SolicitudAusenciaCreate {
@@ -19,6 +22,9 @@ export interface SolicitudAusenciaCreate {
     hora_inicio?: string;
     hora_fin?: string;
     razon: string;
+    // Optional fields sent from the frontend
+    numero_boleta?: string;
+    codigos?: string[];
 }
 
 export interface SolicitudAusenciaUpdate {

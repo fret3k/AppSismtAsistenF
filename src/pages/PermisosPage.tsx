@@ -39,6 +39,39 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
     const [userNames, setUserNames] = useState<Record<string, string>>({});
     const [userDNIs, setUserDNIs] = useState<Record<string, string>>({});
 
+    // Extra UI state for request form
+    const [numeroBoleta, setNumeroBoleta] = useState<string>('');
+    const [codigosSeleccionados, setCodigosSeleccionados] = useState<string[]>([]);
+    const [employeeSearch, setEmployeeSearch] = useState<string>('');
+    const [showEmployeeDropdown, setShowEmployeeDropdown] = useState<boolean>(false);
+
+    const CODE_OPTIONS_GENERAL = [
+        { code: 'CS', label: 'Comisión de Servicio' },
+        { code: 'CGDM', label: 'Descanso Médico' },
+        { code: 'CGCM', label: 'Cita Médica' },
+        { code: 'SGPP', label: 'Permiso personal o particular' },
+        { code: 'CGCO', label: 'Capacitación oficializada' },
+        { code: 'CGCNO', label: 'Capacitación No Oficializada' }
+    ];
+
+    const CODE_OPTIONS_SPECIAL = [
+        { code: 'CGF', label: 'Fallecimiento de Familiar hasta 2do. Grado' },
+        { code: 'ACV', label: 'Permiso a cuenta de vacaciones' },
+        { code: 'S', label: 'Suspensión' },
+        { code: 'L', label: 'Licencia' },
+        { code: 'O', label: 'Otros (Detallar)' }
+    ];
+
+    const ALL_CODE_OPTIONS = [...CODE_OPTIONS_GENERAL, ...CODE_OPTIONS_SPECIAL];
+
+    const findCodeLabel = (code: string) => ALL_CODE_OPTIONS.find(o => o.code === code)?.label || '';
+
+    const generateBoleta = () => {
+        const d = new Date();
+        const dateStr = d.toISOString().slice(0,10).replace(/-/g, '');
+        return `BOL-${dateStr}-${Math.floor(1000 + Math.random()*9000)}`;
+    }
+
     useEffect(() => {
         loadData();
     }, [mode, user]);
@@ -88,7 +121,20 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
         try {
             setSubmitting(true);
             setError(null);
-            const payload = { ...formData, personal_id: personalIdToUse };
+            // Pack extra info as JSON into the 'razon' field so backend/database can store it without schema changes
+            const extra = {
+                motivo: formData.razon,
+                numero_boleta: numeroBoleta,
+                codigos: codigosSeleccionados
+            };
+
+            const payload = {
+                ...formData,
+                personal_id: personalIdToUse,
+                // Replace 'razon' text with a JSON string containing the reason and metadata
+                razon: JSON.stringify(extra)
+            };
+
             if (!payload.hora_inicio) delete payload.hora_inicio;
             if (!payload.hora_fin) delete payload.hora_fin;
 
@@ -137,14 +183,7 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
         }
     };
 
-    const getTypeIcon = (type: string) => {
-        switch (type) {
-            case 'VACACIONES': return 'sun';
-            case 'ENFERMEDAD': return 'thermometer';
-            case 'PERSONAL': return 'user';
-            default: return 'file-text';
-        }
-    };
+
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('es-ES', {
@@ -154,7 +193,31 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
         });
     };
 
-    // Filter by search term (for admin)
+    // When opening the form, prefill boleta and default start date
+    useEffect(() => {
+        if (showForm) {
+            setNumeroBoleta(generateBoleta());
+            setFormData(prev => ({ ...prev, fecha_inicio: prev.fecha_inicio || new Date().toISOString().slice(0,10) }));
+            setCodigosSeleccionados([]);
+            // clear employee search state
+            setEmployeeSearch('');
+            setSelectedPersonalId('');
+        }
+    }, [showForm]);
+
+    // Keep employeeSearch in sync when selecting employee (fill display text)
+    useEffect(() => {
+        if (selectedPersonalId) {
+            const p = listaPersonal.find(x => x.id === selectedPersonalId);
+            if (p) setEmployeeSearch(`${p.dni} - ${p.nombre} ${p.apellido_paterno}`);
+        }
+    }, [selectedPersonalId, listaPersonal]);
+
+    const toggleCodigo = (code: string) => {
+        setCodigosSeleccionados(prev => prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]);
+    };
+
+    // Filter by search term (for admin) — now includes boleta, códigos y motivo
     const getFilteredBySearch = (items: SolicitudAusencia[]) => {
         if (!searchTerm.trim() || mode !== 'admin') return items;
 
@@ -162,8 +225,32 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
         return items.filter(s => {
             const name = userNames[s.personal_id]?.toLowerCase() || '';
             const dni = userDNIs[s.personal_id]?.toLowerCase() || '';
-            return name.includes(term) || dni.includes(term);
+            const boleta = (s.numero_boleta || '').toLowerCase();
+            const codigosStr = (s.codigos || []).join(' ').toLowerCase();
+            const razon = (s.razon || '').toLowerCase();
+            // also allow searching by code label
+            const codeLabels = (s.codigos || []).map(c => findCodeLabel(c).toLowerCase()).join(' ');
+            return (
+                name.includes(term) ||
+                dni.includes(term) ||
+                boleta.includes(term) ||
+                codigosStr.includes(term) ||
+                codeLabels.includes(term) ||
+                razon.includes(term)
+            );
         });
+    };
+
+    const getSearchMatches = (s: SolicitudAusencia) => {
+        const term = searchTerm.toLowerCase();
+        return {
+            nameMatch: (userNames[s.personal_id] || '').toLowerCase().includes(term),
+            dniMatch: (userDNIs[s.personal_id] || '').toLowerCase().includes(term),
+            boletaMatch: (s.numero_boleta || '').toLowerCase().includes(term),
+            codigoMatches: (s.codigos || []).map(c => ({ code: c, match: c.toLowerCase().includes(term) || findCodeLabel(c).toLowerCase().includes(term) })),
+
+            razonMatch: (s.razon || '').toLowerCase().includes(term)
+        };
     };
 
     // Stats
@@ -216,7 +303,7 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                         <Icon name="search" size={20} color="#9ca3af" />
                         <input
                             type="text"
-                            placeholder="Buscar por nombre o DNI..."
+                            placeholder="Buscar por DNI o nombre..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -243,37 +330,76 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                     </h2>
                     <form onSubmit={handleCreate}>
                         <div className="form-grid">
+                            <div className="form-group">
+                                <label>N° Boleta</label>
+                                <input type="text" value={numeroBoleta} readOnly onChange={e => setNumeroBoleta(e.target.value)} />
+                            </div>
+
                             {mode === 'admin' && (
+                                <>
+                                    <div className="form-group">
+                                        <label>Buscar</label>
+                                        <div className="employee-search">
+                                            <input
+                                                type="text"
+                                                placeholder="DNI o nombre..."
+                                                value={employeeSearch}
+                                                onChange={e => {
+                                                    const val = e.target.value;
+                                                    setEmployeeSearch(val);
+                                                    setShowEmployeeDropdown(true);
+
+                                                    // If user types only digits and matches exact DNI, auto-select the employee
+                                                    const onlyDigits = /^\d+$/.test(val.trim());
+                                                    if (onlyDigits) {
+                                                        const found = listaPersonal.find(p => p.dni === val.trim());
+                                                        if (found) {
+                                                            setSelectedPersonalId(found.id);
+                                                            setShowEmployeeDropdown(false);
+                                                            setEmployeeSearch(`${found.dni} - ${found.nombre} ${found.apellido_paterno}`);
+                                                        }
+                                                    } else {
+                                                        // if not digits, clear selection while typing names
+                                                        setSelectedPersonalId('');
+                                                    }
+                                                }}
+                                                onFocus={() => setShowEmployeeDropdown(true)}
+                                                required
+                                            />
+                                            {showEmployeeDropdown && (
+                                                <div className="employee-dropdown">
+                                                    {listaPersonal.filter(p => {
+                                                        const term = employeeSearch.toLowerCase();
+                                                        return p.dni.includes(term) || (`${p.nombre} ${p.apellido_paterno} ${p.apellido_materno}`).toLowerCase().includes(term);
+                                                    }).slice(0, 10).map(p => (
+                                                        <div key={p.id} className="employee-item" onClick={() => { setSelectedPersonalId(p.id); setShowEmployeeDropdown(false); setEmployeeSearch(`${p.dni} - ${p.nombre} ${p.apellido_paterno}`); }}>
+                                                            <strong>{p.dni}</strong> — {p.nombre} {p.apellido_paterno} {p.apellido_materno}
+                                                        </div>
+                                                    )) || <div className="employee-item empty">No se encontraron resultados</div>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label>Apellidos y Nombres</label>
+                                        <input type="text" value={userNames[selectedPersonalId] || ''} readOnly />
+                                    </div>
+                                </>
+                            )}
+
+                            {mode !== 'admin' && (
                                 <div className="form-group">
-                                    <label>Empleado *</label>
-                                    <select
-                                        value={selectedPersonalId}
-                                        onChange={e => setSelectedPersonalId(e.target.value)}
-                                        required
-                                    >
-                                        <option value="">Seleccionar empleado...</option>
-                                        {listaPersonal.map(p => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.dni} - {p.nombre} {p.apellido_paterno} {p.apellido_materno}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <label>Apellidos y Nombres</label>
+                                    <input
+                                        type="text"
+                                        value={`${user?.nombre || ''} ${user?.apellido_paterno || ''} ${user?.apellido_materno || ''}`}
+                                        readOnly
+                                    />
                                 </div>
                             )}
 
-                            <div className="form-group">
-                                <label>Tipo de Ausencia *</label>
-                                <select
-                                    value={formData.tipo_ausencia}
-                                    onChange={e => setFormData({ ...formData, tipo_ausencia: e.target.value })}
-                                    required
-                                >
-                                    <option value="PERSONAL">Motivos Personales</option>
-                                    <option value="ENFERMEDAD">Enfermedad / Salud</option>
-                                    <option value="VACACIONES">Vacaciones</option>
-                                    <option value="OTRO">Otro</option>
-                                </select>
-                            </div>
+
 
                             <div className="form-group">
                                 <label>Fecha Inicio *</label>
@@ -322,6 +448,38 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                                     placeholder="Describe el motivo de la solicitud..."
                                     required
                                 />
+                            </div>
+
+                            <div className="form-group full-width">
+                                <label>Seleccione Código(s)</label>
+                                <div className="codes-grid">
+                                    {CODE_OPTIONS_GENERAL.map(opt => (
+                                        <label key={opt.code} className="code-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                checked={codigosSeleccionados.includes(opt.code)}
+                                                onChange={() => toggleCodigo(opt.code)}
+                                            />
+                                            <span className="code-label"><strong>{opt.code}</strong> {opt.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="form-group full-width special-codes-box">
+                                <label>Códigos Especiales</label>
+                                <div className="codes-grid special">
+                                    {CODE_OPTIONS_SPECIAL.map(opt => (
+                                        <label key={opt.code} className="code-checkbox special">
+                                            <input
+                                                type="checkbox"
+                                                checked={codigosSeleccionados.includes(opt.code)}
+                                                onChange={() => toggleCodigo(opt.code)}
+                                            />
+                                            <span className="code-label"><strong>{opt.code}</strong> {opt.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
                         </div>
 
@@ -394,16 +552,51 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                         <div key={solicitud.id} className={`permiso-card status-${solicitud.estado_solicitud.toLowerCase()}`}>
                             <div className="permiso-card-header">
                                 <div className="permiso-card-info">
-                                    <span className="permiso-type-badge">
-                                        <Icon name={getTypeIcon(solicitud.tipo_ausencia) as any} size={14} />
-                                        {solicitud.tipo_ausencia}
-                                    </span>
-                                    {mode === 'admin' && (
-                                        <span className="permiso-user">
-                                            <strong>{userNames[solicitud.personal_id] || 'Cargando...'}</strong>
-                                            <span className="user-dni">DNI: {userDNIs[solicitud.personal_id]}</span>
-                                        </span>
-                                    )}
+                                    {(() => {
+                                        const matches = getSearchMatches(solicitud);
+                                        return (
+                                            <>
+                                                {solicitud.numero_boleta && (
+                                                    <span className={`boleta-badge ${matches.boletaMatch ? 'highlight' : ''}`}>Boleta: {solicitud.numero_boleta}</span>
+                                                )}
+
+                                                {(() => {
+                                                    // The API may store codes inside the razon as JSON — handle both cases
+                                                    let codes: string[] = solicitud.codigos || [];
+                                                    try {
+                                                        const parsed = JSON.parse(solicitud.razon || '"{}"');
+                                                        if (parsed && parsed.codigos && Array.isArray(parsed.codigos)) {
+                                                            codes = parsed.codigos;
+                                                        }
+                                                    } catch (e) {
+                                                        // ignore
+                                                    }
+
+                                                    if (codes && codes.length > 0) {
+                                                        return (
+                                                            <div className="codes-list">
+                                                                {codes.map(c => {
+                                                                    const codeMatchObj = matches.codigoMatches.find(x => x.code === c);
+                                                                    const codeMatch = codeMatchObj?.match;
+                                                                    const codeLabel = findCodeLabel(c);
+                                                                    return <span key={c} className={`code-pill ${codeMatch ? 'highlight' : ''}`}>{c} — {codeLabel}</span>;
+                                                                })}
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return <div className="codes-list empty">Sin códigos seleccionados</div>;
+                                                })()}
+
+                                                {mode === 'admin' && (
+                                                    <span className="permiso-user">
+                                                        <strong className={matches.nameMatch ? 'highlight' : ''}>{userNames[solicitud.personal_id] || 'Cargando...'}</strong>
+                                                        <span className={`user-dni ${matches.dniMatch ? 'highlight' : ''}`}>DNI: {userDNIs[solicitud.personal_id]}</span>
+                                                    </span>
+                                                )}
+                                            </>
+                                        );
+                                    })()}
                                     <span className="permiso-request-date">
                                         Solicitud del {formatDate(solicitud.fecha_solicitud)}
                                     </span>
@@ -437,7 +630,14 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
                             <div className="permiso-reason">
                                 <label>Motivo</label>
-                                <p>{solicitud.razon}</p>
+                                <p>{(() => {
+                                    try {
+                                        const parsed = JSON.parse(solicitud.razon || '""');
+                                        return parsed.motivo || '';
+                                    } catch (e) {
+                                        return solicitud.razon || '';
+                                    }
+                                })()}</p>
                             </div>
 
                             {mode === 'admin' && solicitud.estado_solicitud === 'PENDIENTE' && (

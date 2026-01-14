@@ -315,6 +315,154 @@
     grid-column: 1 / -1;
 }
 
+/* DNI search and small buttons */
+.dni-search {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-small {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn-small:hover {
+    opacity: 0.95;
+}
+
+/* Code checkboxes layout */
+.codes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.5rem;
+}
+
+.code-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #f9fafb;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.code-label {
+    color: #374151;
+    font-size: 0.95rem;
+}
+
+/* Employee dropdown */
+.employee-search {
+    position: relative;
+}
+
+.employee-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    max-height: 260px;
+    overflow: auto;
+    z-index: 50;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    margin-top: 8px;
+}
+
+.employee-item {
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.employee-item:hover {
+    background: #f3f4f6;
+}
+
+.employee-item.empty {
+    color: #9ca3af;
+    cursor: default;
+}
+
+/* Boleta and codes badges */
+.boleta-badge {
+    background: #f8fafc;
+    border: 1px solid #e6eef8;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    color: #334155;
+    margin-right: 0.5rem;
+    display: inline-block;
+}
+
+.codes-list {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.code-pill {
+    background: #eef2ff;
+    color: #3730a3;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.codes-list.empty {
+    color: #6b7280;
+    font-size: 0.9rem;
+    background: #fbfbfb;
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+/* Special codes box */
+.special-codes-box {
+    background: linear-gradient(90deg, rgba(239,246,255,0.6), rgba(240,253,244,0.6));
+    border: 1px solid #e6eef8;
+    padding: 0.75rem;
+    border-radius: 12px;
+}
+
+.special-codes-box .code-checkbox.special {
+    background: #fff;
+    border-radius: 10px;
+    padding: 0.6rem;
+}
+
+/* Display all options on the card */
+.all-codes-available {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #6b7280;
+    background: #f9fafb;
+    padding: 8px 10px;
+    border-radius: 8px;
+}
+/* Highlight match */
+.highlight {
+    background: #fff7cc !important;
+    box-shadow: 0 0 0 2px rgba(255, 235, 59, 0.12) inset;
+}
+
+.user-dni.highlight {
+    padding: 2px 6px;
+    border-radius: 6px;
+}
 .form-actions {
     display: flex;
     gap: 1rem;
@@ -403,18 +551,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-}
-
-.permiso-type-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: #f3f4f6;
-    color: #374151;
-    padding: 0.375rem 0.75rem;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 600;
 }
 
 .permiso-user {

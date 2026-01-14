@@ -224,7 +224,7 @@ const FaceAttendance: React.FC = () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 embedding: embeddingArray,
-                marca_tiempo: new Date().toISOString(),
+                // marca_tiempo removed: handling on backend
                 imagen_base64: imagenBase64,
                 solo_validar: true,
                 threshold: faceDetectionThreshold,
@@ -573,8 +573,8 @@ const FaceAttendance: React.FC = () => {
                                             body: JSON.stringify({
                                                 personal_id: previewData.personal_id,
                                                 reconocimiento_valido: true,
-                                                tipo_registro: previewData.tipo_registro,
-                                                marca_tiempo: new Date().toISOString()
+                                                tipo_registro: previewData.tipo_registro
+                                                // marca_tiempo removed
                                             }),
                                         });
 
