@@ -41,6 +41,8 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
     // Extra UI state for request form
     const [numeroBoleta, setNumeroBoleta] = useState<string>('');
+    const [dependencia, setDependencia] = useState<string>('');
+    const [cargo, setCargo] = useState<string>('');
     const [codigosSeleccionados, setCodigosSeleccionados] = useState<string[]>([]);
     const [employeeSearch, setEmployeeSearch] = useState<string>('');
     const [showEmployeeDropdown, setShowEmployeeDropdown] = useState<boolean>(false);
@@ -68,9 +70,33 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
     const generateBoleta = () => {
         const d = new Date();
-        const dateStr = d.toISOString().slice(0,10).replace(/-/g, '');
-        return `BOL-${dateStr}-${Math.floor(1000 + Math.random()*9000)}`;
+        const dateStr = d.toISOString().slice(0, 10).replace(/-/g, '');
+        return `BOL-${dateStr}-${Math.floor(1000 + Math.random() * 9000)}`;
     }
+
+    const getSolicitudMeta = (s: SolicitudAusencia) => {
+        try {
+            const parsed = JSON.parse(s.razon || '{}');
+            // If parsing succeeds, we expect an object. If s.razon was just a string, JSON.parse might return it as string or number (unlikely if we control save).
+            // But let's be safe.
+            if (typeof parsed !== 'object' || parsed === null) throw new Error();
+            return {
+                numero_boleta: (s.numero_boleta || parsed.numero_boleta || '').toString(),
+                codigos: (s.codigos || parsed.codigos || []) as string[],
+                dependencia: (parsed.dependencia || '') as string,
+                cargo: (parsed.cargo || '') as string,
+                motivo: (parsed.motivo || s.razon || '') as string
+            };
+        } catch {
+            return {
+                numero_boleta: s.numero_boleta || '',
+                codigos: s.codigos || [],
+                dependencia: '',
+                cargo: '',
+                motivo: s.razon || ''
+            };
+        }
+    };
 
     useEffect(() => {
         loadData();
@@ -125,7 +151,9 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
             const extra = {
                 motivo: formData.razon,
                 numero_boleta: numeroBoleta,
-                codigos: codigosSeleccionados
+                codigos: codigosSeleccionados,
+                dependencia: dependencia,
+                cargo: cargo
             };
 
             const payload = {
@@ -197,7 +225,9 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
     useEffect(() => {
         if (showForm) {
             setNumeroBoleta(generateBoleta());
-            setFormData(prev => ({ ...prev, fecha_inicio: prev.fecha_inicio || new Date().toISOString().slice(0,10) }));
+            setDependencia('');
+            setCargo('');
+            setFormData(prev => ({ ...prev, fecha_inicio: prev.fecha_inicio || new Date().toISOString().slice(0, 10) }));
             setCodigosSeleccionados([]);
             // clear employee search state
             setEmployeeSearch('');
@@ -223,13 +253,14 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
         const term = searchTerm.toLowerCase();
         return items.filter(s => {
+            const meta = getSolicitudMeta(s);
             const name = userNames[s.personal_id]?.toLowerCase() || '';
             const dni = userDNIs[s.personal_id]?.toLowerCase() || '';
-            const boleta = (s.numero_boleta || '').toLowerCase();
-            const codigosStr = (s.codigos || []).join(' ').toLowerCase();
-            const razon = (s.razon || '').toLowerCase();
+            const boleta = meta.numero_boleta.toLowerCase();
+            const codigosStr = meta.codigos.join(' ').toLowerCase();
+            const razon = meta.motivo.toLowerCase();
             // also allow searching by code label
-            const codeLabels = (s.codigos || []).map(c => findCodeLabel(c).toLowerCase()).join(' ');
+            const codeLabels = meta.codigos.map(c => findCodeLabel(c).toLowerCase()).join(' ');
             return (
                 name.includes(term) ||
                 dni.includes(term) ||
@@ -243,13 +274,13 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
     const getSearchMatches = (s: SolicitudAusencia) => {
         const term = searchTerm.toLowerCase();
+        const meta = getSolicitudMeta(s);
         return {
             nameMatch: (userNames[s.personal_id] || '').toLowerCase().includes(term),
             dniMatch: (userDNIs[s.personal_id] || '').toLowerCase().includes(term),
-            boletaMatch: (s.numero_boleta || '').toLowerCase().includes(term),
-            codigoMatches: (s.codigos || []).map(c => ({ code: c, match: c.toLowerCase().includes(term) || findCodeLabel(c).toLowerCase().includes(term) })),
-
-            razonMatch: (s.razon || '').toLowerCase().includes(term)
+            boletaMatch: meta.numero_boleta.toLowerCase().includes(term),
+            codigoMatches: meta.codigos.map(c => ({ code: c, match: c.toLowerCase().includes(term) || findCodeLabel(c).toLowerCase().includes(term) })),
+            razonMatch: meta.motivo.toLowerCase().includes(term)
         };
     };
 
@@ -329,75 +360,86 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                         Nueva Solicitud de Permiso
                     </h2>
                     <form onSubmit={handleCreate}>
+                        {mode === 'admin' && (
+                            <div className="search-section-separate" style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e5e7eb' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Buscar Empleado</label>
+                                <div className="employee-search">
+                                    <input
+                                        type="text"
+                                        placeholder="DNI o nombre..."
+                                        value={employeeSearch}
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setEmployeeSearch(val);
+                                            setShowEmployeeDropdown(true);
+
+                                            // If user types only digits and matches exact DNI, auto-select the employee
+                                            const onlyDigits = /^\d+$/.test(val.trim());
+                                            if (onlyDigits) {
+                                                const found = listaPersonal.find(p => p.dni === val.trim());
+                                                if (found) {
+                                                    setSelectedPersonalId(found.id);
+                                                    setShowEmployeeDropdown(false);
+                                                    setEmployeeSearch(`${found.dni} - ${found.nombre} ${found.apellido_paterno}`);
+                                                }
+                                            } else {
+                                                // if not digits, clear selection while typing names
+                                                setSelectedPersonalId('');
+                                            }
+                                        }}
+                                        onFocus={() => setShowEmployeeDropdown(true)}
+                                        required={mode === 'admin'}
+                                    />
+                                    {showEmployeeDropdown && (
+                                        <div className="employee-dropdown">
+                                            {listaPersonal.filter(p => {
+                                                const term = employeeSearch.toLowerCase();
+                                                return p.dni.includes(term) || (`${p.nombre} ${p.apellido_paterno} ${p.apellido_materno}`).toLowerCase().includes(term);
+                                            }).slice(0, 10).map(p => (
+                                                <div key={p.id} className="employee-item" onClick={() => { setSelectedPersonalId(p.id); setShowEmployeeDropdown(false); setEmployeeSearch(`${p.dni} - ${p.nombre} ${p.apellido_paterno}`); }}>
+                                                    <strong>{p.dni}</strong> — {p.nombre} {p.apellido_paterno} {p.apellido_materno}
+                                                </div>
+                                            )) || <div className="employee-item empty">No se encontraron resultados</div>}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="form-grid">
                             <div className="form-group">
                                 <label>N° Boleta</label>
                                 <input type="text" value={numeroBoleta} readOnly onChange={e => setNumeroBoleta(e.target.value)} />
                             </div>
 
-                            {mode === 'admin' && (
-                                <>
-                                    <div className="form-group">
-                                        <label>Buscar</label>
-                                        <div className="employee-search">
-                                            <input
-                                                type="text"
-                                                placeholder="DNI o nombre..."
-                                                value={employeeSearch}
-                                                onChange={e => {
-                                                    const val = e.target.value;
-                                                    setEmployeeSearch(val);
-                                                    setShowEmployeeDropdown(true);
+                            <div className="form-group">
+                                <label>Dependencia</label>
+                                <input
+                                    type="text"
+                                    value={dependencia}
+                                    onChange={e => setDependencia(e.target.value)}
+                                    placeholder="Ingrese dependencia"
+                                />
+                            </div>
 
-                                                    // If user types only digits and matches exact DNI, auto-select the employee
-                                                    const onlyDigits = /^\d+$/.test(val.trim());
-                                                    if (onlyDigits) {
-                                                        const found = listaPersonal.find(p => p.dni === val.trim());
-                                                        if (found) {
-                                                            setSelectedPersonalId(found.id);
-                                                            setShowEmployeeDropdown(false);
-                                                            setEmployeeSearch(`${found.dni} - ${found.nombre} ${found.apellido_paterno}`);
-                                                        }
-                                                    } else {
-                                                        // if not digits, clear selection while typing names
-                                                        setSelectedPersonalId('');
-                                                    }
-                                                }}
-                                                onFocus={() => setShowEmployeeDropdown(true)}
-                                                required
-                                            />
-                                            {showEmployeeDropdown && (
-                                                <div className="employee-dropdown">
-                                                    {listaPersonal.filter(p => {
-                                                        const term = employeeSearch.toLowerCase();
-                                                        return p.dni.includes(term) || (`${p.nombre} ${p.apellido_paterno} ${p.apellido_materno}`).toLowerCase().includes(term);
-                                                    }).slice(0, 10).map(p => (
-                                                        <div key={p.id} className="employee-item" onClick={() => { setSelectedPersonalId(p.id); setShowEmployeeDropdown(false); setEmployeeSearch(`${p.dni} - ${p.nombre} ${p.apellido_paterno}`); }}>
-                                                            <strong>{p.dni}</strong> — {p.nombre} {p.apellido_paterno} {p.apellido_materno}
-                                                        </div>
-                                                    )) || <div className="employee-item empty">No se encontraron resultados</div>}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                            <div className="form-group">
+                                <label>Cargo</label>
+                                <input
+                                    type="text"
+                                    value={cargo}
+                                    onChange={e => setCargo(e.target.value)}
+                                    placeholder="Ingrese cargo"
+                                />
+                            </div>
 
-                                    <div className="form-group">
-                                        <label>Apellidos y Nombres</label>
-                                        <input type="text" value={userNames[selectedPersonalId] || ''} readOnly />
-                                    </div>
-                                </>
-                            )}
-
-                            {mode !== 'admin' && (
-                                <div className="form-group">
-                                    <label>Apellidos y Nombres</label>
-                                    <input
-                                        type="text"
-                                        value={`${user?.nombre || ''} ${user?.apellido_paterno || ''} ${user?.apellido_materno || ''}`}
-                                        readOnly
-                                    />
-                                </div>
-                            )}
+                            <div className="form-group">
+                                <label>Apellidos y Nombres</label>
+                                <input
+                                    type="text"
+                                    value={mode === 'admin' ? (userNames[selectedPersonalId] || '') : `${user?.nombre || ''} ${user?.apellido_paterno || ''} ${user?.apellido_materno || ''}`}
+                                    readOnly
+                                />
+                            </div>
 
 
 
@@ -548,118 +590,97 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                         </p>
                     </div>
                 ) : (
-                    filteredSolicitudes.map(solicitud => (
-                        <div key={solicitud.id} className={`permiso-card status-${solicitud.estado_solicitud.toLowerCase()}`}>
-                            <div className="permiso-card-header">
-                                <div className="permiso-card-info">
-                                    {(() => {
-                                        const matches = getSearchMatches(solicitud);
-                                        return (
-                                            <>
-                                                {solicitud.numero_boleta && (
-                                                    <span className={`boleta-badge ${matches.boletaMatch ? 'highlight' : ''}`}>Boleta: {solicitud.numero_boleta}</span>
-                                                )}
+                    filteredSolicitudes.map(solicitud => {
+                        const meta = getSolicitudMeta(solicitud);
+                        const matches = getSearchMatches(solicitud);
 
-                                                {(() => {
-                                                    // The API may store codes inside the razon as JSON — handle both cases
-                                                    let codes: string[] = solicitud.codigos || [];
-                                                    try {
-                                                        const parsed = JSON.parse(solicitud.razon || '"{}"');
-                                                        if (parsed && parsed.codigos && Array.isArray(parsed.codigos)) {
-                                                            codes = parsed.codigos;
-                                                        }
-                                                    } catch (e) {
-                                                        // ignore
-                                                    }
+                        return (
+                            <div key={solicitud.id} className={`permiso-card status-${solicitud.estado_solicitud.toLowerCase()}`}>
+                                <div className="permiso-card-header">
+                                    <div className="permiso-card-info">
+                                        {meta.numero_boleta && (
+                                            <span className={`boleta-badge ${matches.boletaMatch ? 'highlight' : ''}`}>Boleta: {meta.numero_boleta}</span>
+                                        )}
 
-                                                    if (codes && codes.length > 0) {
-                                                        return (
-                                                            <div className="codes-list">
-                                                                {codes.map(c => {
-                                                                    const codeMatchObj = matches.codigoMatches.find(x => x.code === c);
-                                                                    const codeMatch = codeMatchObj?.match;
-                                                                    const codeLabel = findCodeLabel(c);
-                                                                    return <span key={c} className={`code-pill ${codeMatch ? 'highlight' : ''}`}>{c} — {codeLabel}</span>;
-                                                                })}
-                                                            </div>
-                                                        );
-                                                    }
+                                        {meta.codigos.length > 0 ? (
+                                            <div className="codes-list">
+                                                {meta.codigos.map(c => {
+                                                    const codeMatchObj = matches.codigoMatches.find(x => x.code === c);
+                                                    const codeMatch = codeMatchObj?.match;
+                                                    const codeLabel = findCodeLabel(c);
+                                                    return <span key={c} className={`code-pill ${codeMatch ? 'highlight' : ''}`}>{c} — {codeLabel}</span>;
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="codes-list empty">Sin códigos seleccionados</div>
+                                        )}
 
-                                                    return <div className="codes-list empty">Sin códigos seleccionados</div>;
-                                                })()}
+                                        {mode === 'admin' && (
+                                            <span className="permiso-user">
+                                                <strong className={matches.nameMatch ? 'highlight' : ''}>{userNames[solicitud.personal_id] || 'Cargando...'}</strong>
+                                                <span className={`user-dni ${matches.dniMatch ? 'highlight' : ''}`}>DNI: {userDNIs[solicitud.personal_id]}</span>
+                                            </span>
+                                        )}
 
-                                                {mode === 'admin' && (
-                                                    <span className="permiso-user">
-                                                        <strong className={matches.nameMatch ? 'highlight' : ''}>{userNames[solicitud.personal_id] || 'Cargando...'}</strong>
-                                                        <span className={`user-dni ${matches.dniMatch ? 'highlight' : ''}`}>DNI: {userDNIs[solicitud.personal_id]}</span>
-                                                    </span>
-                                                )}
-                                            </>
-                                        );
-                                    })()}
-                                    <span className="permiso-request-date">
-                                        Solicitud del {formatDate(solicitud.fecha_solicitud)}
-                                    </span>
-                                </div>
-                                <span className={`status-badge ${getStatusBadgeClass(solicitud.estado_solicitud)}`}>
-                                    {solicitud.estado_solicitud}
-                                </span>
-                            </div>
-
-                            <div className="permiso-dates-row">
-                                <div className="date-item">
-                                    <div className="icon-wrapper">
-                                        <Icon name="calendar" size={16} color="#6b7280" />
+                                        <span className="permiso-request-date">
+                                            Solicitud del {formatDate(solicitud.fecha_solicitud)}
+                                        </span>
                                     </div>
-                                    <span>
-                                        <strong>Desde:</strong> {formatDate(solicitud.fecha_inicio)}
-                                        {solicitud.hora_inicio && ` a las ${solicitud.hora_inicio}`}
+                                    <span className={`status-badge ${getStatusBadgeClass(solicitud.estado_solicitud)}`}>
+                                        {solicitud.estado_solicitud}
                                     </span>
                                 </div>
-                                <span className="date-arrow">→</span>
-                                <div className="date-item">
-                                    <div className="icon-wrapper">
-                                        <Icon name="calendar" size={16} color="#6b7280" />
+
+                                <div className="permiso-dates-row">
+                                    <div className="date-item">
+                                        <div className="icon-wrapper">
+                                            <Icon name="calendar" size={16} color="#6b7280" />
+                                        </div>
+                                        <span>
+                                            <strong>Desde:</strong> {formatDate(solicitud.fecha_inicio)}
+                                            {solicitud.hora_inicio && ` a las ${solicitud.hora_inicio}`}
+                                        </span>
                                     </div>
-                                    <span>
-                                        <strong>Hasta:</strong> {formatDate(solicitud.fecha_fin)}
-                                        {solicitud.hora_fin && ` a las ${solicitud.hora_fin}`}
-                                    </span>
+                                    <span className="date-arrow">→</span>
+                                    <div className="date-item">
+                                        <div className="icon-wrapper">
+                                            <Icon name="calendar" size={16} color="#6b7280" />
+                                        </div>
+                                        <span>
+                                            <strong>Hasta:</strong> {formatDate(solicitud.fecha_fin)}
+                                            {solicitud.hora_fin && ` a las ${solicitud.hora_fin}`}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="permiso-reason">
-                                <label>Motivo</label>
-                                <p>{(() => {
-                                    try {
-                                        const parsed = JSON.parse(solicitud.razon || '""');
-                                        return parsed.motivo || '';
-                                    } catch (e) {
-                                        return solicitud.razon || '';
-                                    }
-                                })()}</p>
-                            </div>
-
-                            {mode === 'admin' && solicitud.estado_solicitud === 'PENDIENTE' && (
-                                <div className="admin-actions">
-                                    <button
-                                        className="btn-approve"
-                                        onClick={() => handleStatusUpdate(solicitud.id, 'APROBADA')}
-                                    >
-                                        <Icon name="check" size={18} />
-                                        Aprobar
-                                    </button>
-                                    <button
-                                        className="btn-deny"
-                                        onClick={() => handleStatusUpdate(solicitud.id, 'DENEGADA')}
-                                    >
-                                        <Icon name="x" size={18} />
-                                        Denegar
-                                    </button>
+                                <div className="permiso-reason">
+                                    <p><strong>Dependencia:</strong> {meta.dependencia || 'No especificada'}</p>
+                                    <p><strong>Cargo:</strong> {meta.cargo || 'No especificado'}</p>
+                                    <label>Motivo</label>
+                                    <p>{meta.motivo}</p>
                                 </div>
-                            )}
-                        </div>
-                    ))
+
+                                {mode === 'admin' && solicitud.estado_solicitud === 'PENDIENTE' && (
+                                    <div className="admin-actions">
+                                        <button
+                                            className="btn-approve"
+                                            onClick={() => handleStatusUpdate(solicitud.id, 'APROBADA')}
+                                        >
+                                            <Icon name="check" size={18} />
+                                            Aprobar
+                                        </button>
+                                        <button
+                                            className="btn-deny"
+                                            onClick={() => handleStatusUpdate(solicitud.id, 'DENEGADA')}
+                                        >
+                                            <Icon name="x" size={18} />
+                                            Denegar
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
                 )}
             </div>
         </div>

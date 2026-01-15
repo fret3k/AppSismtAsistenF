@@ -262,9 +262,7 @@ const AsistenciasPage: React.FC = () => {
                                     </div>
 
                                     <div className="detail-footer-actions">
-                                        <button className="btn-secondary-outline">
-                                            <Icon name="user" size={16} /> Ver Perfil Completo
-                                        </button>
+
                                         <button className="btn-secondary-outline" onClick={exportToExcel}>
                                             <Icon name="download" size={16} /> Exportar Reporte
                                         </button>

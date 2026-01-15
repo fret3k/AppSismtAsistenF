@@ -12,6 +12,8 @@ export interface SolicitudAusencia {
     // Optional additional fields returned by the API
     numero_boleta?: string;
     codigos?: string[];
+    dependencia?: string;
+    cargo?: string;
 }
 
 export interface SolicitudAusenciaCreate {
