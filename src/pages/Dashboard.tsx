@@ -9,6 +9,8 @@ import MisAsistenciasPage from './MisAsistenciasPage';
 import Icon from '../components/Icon';
 import AsistenciasPage from './AsistenciasPage';
 import PermisosPage from './PermisosPage';
+import ControlEntradaSalidaPage from './ControlEntradaSalidaPage';
+import HistorialPermisosPage from './HistorialPermisosPage';
 import { ReporteMensualPage } from './ReporteMensualPage';
 import './Dashboard.css';
 import { asistenciaService } from '../services/asistenciaService';
@@ -66,13 +68,21 @@ const DashboardHome: React.FC = () => {
                     <h1>¡Bienvenido al Sistema SICAF!</h1>
                     <p>Sistema de Control de Asistencia Facial</p>
                     <div className="welcome-actions">
+                        <button className="welcome-btn primary" onClick={() => navigate('/dashboard/marcar-asistencia')}>
+                            <Icon name="clock" size={20} />
+                            Marcar Asistencia
+                        </button>
                         <button className="welcome-btn" onClick={() => navigate('/dashboard/mis-asistencias')}>
                             <Icon name="calendar" size={20} />
                             Ver Mis Asistencias
                         </button>
-                        <button className="welcome-btn secondary" onClick={() => navigate('/dashboard/mis-permisos')}>
+                        <button className="welcome-btn" onClick={() => navigate('/dashboard/mis-permisos')}>
                             <Icon name="file-text" size={20} />
-                            Mis Permisos
+                            Solicitar Permiso
+                        </button>
+                        <button className="welcome-btn secondary" onClick={() => navigate('/dashboard/historial-permisos')}>
+                            <Icon name="archive" size={20} />
+                            Mi Historial
                         </button>
                         <button className="welcome-btn secondary" onClick={() => navigate('/dashboard/mi-perfil')}>
                             <Icon name="user" size={20} />
@@ -266,10 +276,34 @@ const Dashboard: React.FC = () => {
                 }
             />
             <Route
+                path="/historial-permisos"
+                element={
+                    <DashboardLayout title="Historial de Permisos" subtitle="Consulta el historial completo de solicitudes">
+                        <HistorialPermisosPage />
+                    </DashboardLayout>
+                }
+            />
+            <Route
                 path="/registrar-rostro"
                 element={
                     <DashboardLayout title="Registrar Rostro" subtitle="Registra tu rostro para reconocimiento">
                         <PlaceholderPage title="Registrar Rostro" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/control-entrada-salida"
+                element={
+                    <DashboardLayout title="Control de Permisos" subtitle="Registra tu salida o retorno de permiso">
+                        <ControlEntradaSalidaPage mode="permiso" />
+                    </DashboardLayout>
+                }
+            />
+            <Route
+                path="/marcar-asistencia"
+                element={
+                    <DashboardLayout title="Control de Asistencia" subtitle="Registra tu ingreso o salida diaria">
+                        <ControlEntradaSalidaPage mode="asistencia" />
                     </DashboardLayout>
                 }
             />

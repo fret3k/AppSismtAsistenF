@@ -221,13 +221,19 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
         });
     };
 
-    // When opening the form, prefill boleta and default start date
+    // When opening the form, prefill boleta and default dates automatically
     useEffect(() => {
         if (showForm) {
+            const today = new Date().toISOString().slice(0, 10);
             setNumeroBoleta(generateBoleta());
             setDependencia('');
             setCargo('');
-            setFormData(prev => ({ ...prev, fecha_inicio: prev.fecha_inicio || new Date().toISOString().slice(0, 10) }));
+            // Establecer fechas automáticamente como hoy
+            setFormData(prev => ({
+                ...prev,
+                fecha_inicio: today,
+                fecha_fin: today
+            }));
             setCodigosSeleccionados([]);
             // clear employee search state
             setEmployeeSearch('');
@@ -443,42 +449,12 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
 
 
-                            <div className="form-group">
-                                <label>Fecha Inicio *</label>
-                                <input
-                                    type="date"
-                                    value={formData.fecha_inicio}
-                                    onChange={e => setFormData({ ...formData, fecha_inicio: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Fecha Fin *</label>
-                                <input
-                                    type="date"
-                                    value={formData.fecha_fin}
-                                    onChange={e => setFormData({ ...formData, fecha_fin: e.target.value })}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Hora Inicio (Opcional)</label>
-                                <input
-                                    type="time"
-                                    value={formData.hora_inicio}
-                                    onChange={e => setFormData({ ...formData, hora_inicio: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label>Hora Fin (Opcional)</label>
-                                <input
-                                    type="time"
-                                    value={formData.hora_fin}
-                                    onChange={e => setFormData({ ...formData, hora_fin: e.target.value })}
-                                />
+                            {/* Fechas se establecen automáticamente */}
+                            <div className="form-group full-width">
+                                <div className="auto-date-notice">
+                                    <Icon name="info" size={16} />
+                                    <span>Fecha de solicitud: <strong>{formData.fecha_inicio || new Date().toLocaleDateString('es-PE')}</strong> (automática)</span>
+                                </div>
                             </div>
 
                             <div className="form-group full-width">

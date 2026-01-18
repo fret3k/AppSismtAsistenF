@@ -37,7 +37,14 @@ const Sidebar: React.FC = () => {
                 section: 'Asistencias',
                 items: [
                     { path: '/dashboard/asistencias', icon: 'camera', text: 'Registro y Control' },
-                    { path: '/dashboard/permisos', icon: 'file-text', text: 'Gestión Permisos' },
+                ],
+            },
+            {
+                section: 'Permisos',
+                items: [
+                    { path: '/dashboard/permisos', icon: 'check-square', text: 'Gestión Permisos' },
+                    { path: '/dashboard/control-entrada-salida', icon: 'clock', text: 'Marcar Permiso' },
+                    { path: '/dashboard/historial-permisos', icon: 'archive', text: 'Historial Permisos' },
                 ],
             },
             {
@@ -66,11 +73,24 @@ const Sidebar: React.FC = () => {
         items: { path: string; icon: IconName; text: string }[];
     }[] = [
             {
+                section: 'Principal',
+                items: [
+                    { path: '/dashboard', icon: 'bar-chart-2', text: 'Dashboard' },
+                ],
+            },
+            {
                 section: 'Mi Espacio',
                 items: [
                     { path: '/dashboard/mi-perfil', icon: 'user', text: 'Mi Perfil' },
                     { path: '/dashboard/mis-asistencias', icon: 'calendar', text: 'Mis Asistencias' },
-                    { path: '/dashboard/mis-permisos', icon: 'file-text', text: 'Mis Permisos' },
+                ],
+            },
+            {
+                section: 'Permisos',
+                items: [
+                    { path: '/dashboard/mis-permisos', icon: 'file-text', text: 'Solicitar Permiso' },
+                    { path: '/dashboard/control-entrada-salida', icon: 'clock', text: 'Marcar Permiso' },
+                    { path: '/dashboard/historial-permisos', icon: 'archive', text: 'Mi Historial' },
                 ],
             },
             {
