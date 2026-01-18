@@ -88,12 +88,6 @@ const RecentAttendances: React.FC<RecentAttendancesProps> = ({ updateTrigger = 0
         return colors[sum % colors.length];
     };
 
-    const getEstadoClass = (estado: string) => {
-        const e = estado.toUpperCase();
-        if (e === 'A TIEMPO' || e === 'NORMAL' || e === 'OMISION') return 'status-normal';
-        if (e === 'TARDE') return 'status-tarde';
-        return 'status-falta';
-    };
 
     return (
         <div className="recent-attendances-container">

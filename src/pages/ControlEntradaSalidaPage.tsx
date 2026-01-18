@@ -49,8 +49,8 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
     const [successData, setSuccessData] = useState<{ tipo: string; hora: string; usuario: string } | null>(null);
 
     // Configuración
-    const [faceDetectionThreshold, setFaceDetectionThreshold] = useState(0.75);
-    const [faceDetectionMargin, setFaceDetectionMargin] = useState(0.06);
+    const [faceDetectionThreshold] = useState(0.75);
+    const [faceDetectionMargin] = useState(0.06);
 
     const API_BASE_URL = 'http://localhost:8000';
 
