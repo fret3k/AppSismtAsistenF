@@ -86,6 +86,31 @@ const HistorialPermisosPage: React.FC = () => {
         });
     };
 
+    const calculateHours = (s: SolicitudAusencia) => {
+        if (s.hora_inicio && s.hora_fin) {
+            try {
+                const [h1, m1] = s.hora_inicio.split(':').map(Number);
+                const [h2, m2] = s.hora_fin.split(':').map(Number);
+                const mins = (h2 * 60 + m2) - (h1 * 60 + m1);
+                return Math.max(0, mins / 60);
+            } catch (e) {
+                console.error("Error calculating hours", e);
+                return 0;
+            }
+        }
+
+        // Si no hay horas, calcular por días (asumiendo 8h por día)
+        try {
+            const start = new Date(s.fecha_inicio);
+            const end = new Date(s.fecha_fin);
+            const diffTime = end.getTime() - start.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            return diffDays * 8;
+        } catch {
+            return 0;
+        }
+    };
+
     // Filtrar solicitudes
     const filteredSolicitudes = solicitudes.filter(s => {
         if (filterStatus !== 'all' && s.estado_solicitud !== filterStatus) return false;
@@ -102,6 +127,9 @@ const HistorialPermisosPage: React.FC = () => {
         aprobadas: solicitudes.filter(s => s.estado_solicitud === 'APROBADA').length,
         denegadas: solicitudes.filter(s => s.estado_solicitud === 'DENEGADA').length,
         pendientes: solicitudes.filter(s => s.estado_solicitud === 'PENDIENTE').length,
+        totalHoras: solicitudes
+            .filter(s => s.estado_solicitud === 'APROBADA')
+            .reduce((acc, s) => acc + calculateHours(s), 0)
     };
 
     if (loading) {
@@ -141,6 +169,10 @@ const HistorialPermisosPage: React.FC = () => {
                 <div className="stat-item pending">
                     <Icon name="clock" size={18} />
                     <span>{stats.pendientes} Pendientes</span>
+                </div>
+                <div className="stat-item hours">
+                    <Icon name="watch" size={18} />
+                    <span>{stats.totalHoras.toFixed(1)} Horas Acum.</span>
                 </div>
             </div>
 
@@ -196,6 +228,7 @@ const HistorialPermisosPage: React.FC = () => {
                                 <th>Fecha Solicitud</th>
                                 <th>Fecha Inicio</th>
                                 <th>Fecha Fin</th>
+                                <th>Horas</th>
                                 <th>Código</th>
                                 <th>Motivo</th>
                                 <th>Estado</th>
@@ -212,6 +245,7 @@ const HistorialPermisosPage: React.FC = () => {
                                         <td>{formatDate(solicitud.fecha_solicitud)}</td>
                                         <td>{formatDate(solicitud.fecha_inicio)}</td>
                                         <td>{formatDate(solicitud.fecha_fin)}</td>
+                                        <td>{calculateHours(solicitud).toFixed(1)}h</td>
                                         <td className="codes-cell">
                                             {meta.codigos.length > 0 ? (
                                                 meta.codigos.map(code => (

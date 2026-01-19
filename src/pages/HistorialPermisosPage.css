@@ -47,6 +47,12 @@
     color: #f59e0b;
 }
 
+.stat-item.hours {
+    border-left-color: #8b5cf6;
+    /* Violeta/Morado para horas */
+    color: #8b5cf6;
+}
+
 /* Filters Row */
 .filters-row {
     display: flex;
