@@ -333,6 +333,17 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
             )}
 
 
+            {/* Last Approved Permission Notification */}
+            {solicitudes.length > 0 && solicitudes[0].estado_solicitud === 'APROBADA' && (
+                <div className="alert alert-info">
+                    <Icon name="check-circle" size={20} />
+                    <span>
+                        Tu última solicitud del <strong>{formatDate(solicitudes[0].fecha_solicitud)}</strong> fue <strong>APROBADA</strong>.
+                        Motivo: <strong>{getSolicitudMeta(solicitudes[0]).motivo}</strong>.
+                    </span>
+                </div>
+            )}
+
             {/* Action Bar */}
             <div className="action-bar">
                 {mode === 'admin' && (

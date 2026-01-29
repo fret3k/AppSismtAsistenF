@@ -52,13 +52,68 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
     const [faceDetectionThreshold] = useState(0.75);
     const [faceDetectionMargin] = useState(0.06);
 
+    // Permisos aprobados
+    const [approvedPermissions, setApprovedPermissions] = useState<any[]>([]);
+    const [selectedPermisoId, setSelectedPermisoId] = useState("");
+
     const API_BASE_URL = 'http://localhost:8000';
+
+    // Importar servicio dinámicamente o asumir que existe global (mejor importar arriba si posible, pero aquí mantenemos estructura)
+    // Usaremos fetch directo o el servicio si lo importamos.
+    // Vamos a usar fetch directo para simplificar sin imports extras que rompan el bloque, 
+    // pero lo ideal es importar permisosService. Asumiremos que podemos hacer fetch.
 
     // Textos dinámicos según modo
     const isPermiso = mode === 'permiso';
     const title = isPermiso ? "Control de Permisos" : "Control de Asistencia";
     const btnEntradaText = isPermiso ? "Retorno de Permiso" : "Marcar Entrada";
     const btnSalidaText = isPermiso ? "Salida por Permiso" : "Marcar Salida";
+
+    // Cargar permisos aprobados
+    const loadApprovedPermissions = useCallback(async () => {
+        if (!user?.id || !isPermiso) return;
+        try {
+            // Usar endpoint de permisos o filtrar. 
+            // GET /solicitudes-ausencias/personal/{id}
+            const response = await fetch(`${API_BASE_URL}/solicitudes-ausencias/personal/${user.id}`);
+            if (response.ok) {
+                const data = await response.json();
+                const today = new Date().toISOString().split('T')[0];
+
+                // Filtrar: APROBADA y fecha coincide con hoy
+                const validos = data.filter((p: any) =>
+                    p.estado_solicitud === 'APROBADA' &&
+                    p.fecha_inicio === today
+                    // Podríamos filtrar si ya fue "usado" (tiene hora_inicio marcada con hora real en control_tiempo),
+                    // pero por ahora mostrar todos los aprobados de hoy.
+                );
+                setApprovedPermissions(validos);
+            }
+        } catch (error) {
+            console.error("Error loading permissions", error);
+        }
+    }, [user?.id, isPermiso]);
+
+    useEffect(() => {
+        loadApprovedPermissions();
+    }, [loadApprovedPermissions]);
+
+    // Helper para parsear metadata
+    const getSolicitudMeta = (s: any) => {
+        try {
+            const parsed = JSON.parse(s.razon || '{}');
+            if (typeof parsed !== 'object' || parsed === null) throw new Error();
+            return {
+                numero_boleta: (s.numero_boleta || parsed.numero_boleta || '').toString(),
+                motivo: (parsed.motivo || s.razon || '') as string
+            };
+        } catch {
+            return {
+                numero_boleta: s.numero_boleta || '',
+                motivo: s.razon || ''
+            };
+        }
+    };
 
     // Cargar historial del día
     const loadTodayHistory = useCallback(async () => {
@@ -272,7 +327,8 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                 body: JSON.stringify({
                     personal_id: verifyData.personal_id || user?.id,
                     tipo_registro: tipo,
-                    categoria: mode
+                    categoria: mode,
+                    solicitud_id: isPermiso && tipo === 'SALIDA' ? selectedPermisoId : undefined
                 }),
             });
 
@@ -412,10 +468,49 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                         <div className="action-buttons">
                             {isPermiso ? (
                                 <>
+                                    <div className="permission-selector" style={{ marginBottom: '1rem', width: '100%' }}>
+                                        <select
+                                            value={selectedPermisoId}
+                                            onChange={(e) => setSelectedPermisoId(e.target.value)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                borderRadius: '0.5rem',
+                                                border: '1px solid #d1d5db',
+                                                backgroundColor: selectedPermisoId ? 'white' : '#f9fafb'
+                                            }}
+                                            disabled={!isCameraActive || isProcessing}
+                                        >
+                                            <option value="">-- Seleccione Permiso Aprobado --</option>
+                                            {approvedPermissions.length > 0 ? (
+                                                approvedPermissions.map(p => {
+                                                    // Intentar extraer el motivo legible del JSON 'razon' o usar la raw string
+                                                    let label = p.razon;
+                                                    try {
+                                                        const parsed = JSON.parse(p.razon);
+                                                        label = parsed.motivo || label;
+                                                    } catch { }
+                                                    return (
+                                                        <option key={p.id} value={p.id}>
+                                                            {label} (Boleta: {getSolicitudMeta(p).numero_boleta || 'S/N'})
+                                                        </option>
+                                                    );
+                                                })
+                                            ) : (
+                                                <option disabled>No tienes permisos aprobados para hoy</option>
+                                            )}
+                                        </select>
+                                        {approvedPermissions.length === 0 && (
+                                            <div style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '4px' }}>
+                                                * Solicite un permiso a su administrador primero.
+                                            </div>
+                                        )}
+                                    </div>
                                     <button
                                         className="btn-salida"
                                         onClick={() => registrarTiempo('SALIDA')}
-                                        disabled={!isCameraActive || isProcessing}
+                                        disabled={!isCameraActive || isProcessing || !selectedPermisoId}
+                                        style={{ opacity: !selectedPermisoId ? 0.6 : 1 }}
                                     >
                                         <Icon name="log-out" size={24} />
                                         <span>{btnSalidaText}</span>

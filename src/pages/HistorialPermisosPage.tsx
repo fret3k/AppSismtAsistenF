@@ -247,14 +247,22 @@ const HistorialPermisosPage: React.FC = () => {
                                         <td>{formatDate(solicitud.fecha_fin)}</td>
                                         <td>{calculateHours(solicitud).toFixed(1)}h</td>
                                         <td className="codes-cell">
-                                            {meta.codigos.length > 0 ? (
+                                            {meta.codigos && meta.codigos.length > 0 ? (
                                                 meta.codigos.map(code => (
                                                     <span key={code} className="code-tag" title={findCodeLabel(code)}>
                                                         {code}
                                                     </span>
                                                 ))
                                             ) : (
-                                                <span className="no-code">-</span>
+                                                // Try to guess code from motivo if direct string match (fallback)
+                                                ((() => {
+                                                    const match = CODE_OPTIONS.find(o => o.label === meta.motivo);
+                                                    return match ? (
+                                                        <span className="code-tag" title={match.label}>{match.code}</span>
+                                                    ) : (
+                                                        <span className="no-code">-</span>
+                                                    );
+                                                })())
                                             )}
                                         </td>
                                         <td className="motivo-cell" title={meta.motivo}>
