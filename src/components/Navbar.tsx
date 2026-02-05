@@ -1,11 +1,13 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 import logo from '../assets/logo_corte.jpg';
 
 const Navbar: React.FC = () => {
     const { isAuthenticated, user } = useAuth();
+    const location = useLocation();
+    const isPermisoPage = location.pathname === '/marcar-permiso';
 
     return (
         <nav className="navbar">
@@ -29,6 +31,12 @@ const Navbar: React.FC = () => {
                             {user?.foto_base64 && (
                                 <img src={user.foto_base64} alt="Perfil" className="navbar-avatar-min" />
                             )}
+                            <Link
+                                to={isPermisoPage ? "/" : "/marcar-permiso"}
+                                className="btn-navbar btn-permiso-nav"
+                            >
+                                {isPermisoPage ? "Regresar" : "Marcar Permiso"}
+                            </Link>
                             <Link to="/dashboard" className="btn-navbar">
                                 Dashboard
                             </Link>

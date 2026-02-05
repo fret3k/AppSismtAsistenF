@@ -17,6 +17,8 @@ interface ResumenJornada {
     horaSalida: string | null;
     horasTrabajadas: string;
     minutosTrabajados: number;
+    tiempoAusencia: string;
+    minutosAusencia: number;
 }
 
 interface ControlEntradaSalidaPageProps {
@@ -41,7 +43,9 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
         horaEntrada: null,
         horaSalida: null,
         horasTrabajadas: '0h 0m',
-        minutosTrabajados: 0
+        minutosTrabajados: 0,
+        tiempoAusencia: '0h 0m',
+        minutosAusencia: 0
     });
     const [historialHoy, setHistorialHoy] = useState<RegistroTiempo[]>([]);
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -78,7 +82,8 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
             const response = await fetch(`${API_BASE_URL}/solicitudes-ausencias/personal/${user.id}`);
             if (response.ok) {
                 const data = await response.json();
-                const today = new Date().toISOString().split('T')[0];
+                const d = new Date();
+                const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
                 // Filtrar: APROBADA y fecha coincide con hoy
                 const validos = data.filter((p: any) =>
@@ -118,7 +123,8 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
     // Cargar historial del día
     const loadTodayHistory = useCallback(async () => {
         try {
-            const today = new Date().toISOString().split('T')[0];
+            const d = new Date();
+            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             const response = await fetch(`${API_BASE_URL}/control-tiempo/personal/${user?.id}?fecha=${today}`);
             if (response.ok) {
                 const data = await response.json();
@@ -129,7 +135,9 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                             horaEntrada: data.resumen.hora_entrada,
                             horaSalida: data.resumen.hora_salida,
                             horasTrabajadas: data.resumen.horas_trabajadas || '0h 0m',
-                            minutosTrabajados: data.resumen.minutos_trabajados || 0
+                            minutosTrabajados: data.resumen.minutos_trabajados || 0,
+                            tiempoAusencia: data.resumen.tiempo_ausencia || '0h 0m',
+                            minutosAusencia: data.resumen.minutos_ausencia || 0
                         });
                     }
                 }
@@ -564,6 +572,10 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                             <div className="stat-box highlight">
                                 <span className="label">Horas Trab.</span>
                                 <span className="value">{resumenHoy.horasTrabajadas}</span>
+                            </div>
+                            <div className="stat-box">
+                                <span className="label">Tiempo Ausencia</span>
+                                <span className="value">{resumenHoy.tiempoAusencia}</span>
                             </div>
                         </div>
                     </div>

@@ -112,6 +112,36 @@
     background: #fecaca;
 }
 
+/* Export PDF Button */
+.btn-export-pdf {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.75rem;
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+    transition: all 0.2s ease;
+}
+
+.btn-export-pdf:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(220, 38, 38, 0.3);
+}
+
+.btn-export-pdf:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    background: #9ca3af;
+    box-shadow: none;
+}
+
 .results-count {
     margin-left: auto;
     font-size: 0.85rem;

@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Step 2: Convert PersonalResponseDTO to User (data comes directly from login response)
             const userData: User = {
                 id: loginResponse.personal.id,
+                dni: loginResponse.personal.dni,
                 email: loginResponse.personal.email,
                 nombre: loginResponse.personal.nombre,
                 apellido_paterno: loginResponse.personal.apellido_paterno,

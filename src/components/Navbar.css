@@ -72,6 +72,46 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
+.btn-navbar-permiso {
+    background: #FFB300;
+    /* Amber/Yellow for caution/permission */
+    color: #333;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-navbar-permiso:hover {
+    background: #FFCA28;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.icon-permiso {
+    font-size: 1rem;
+}
+
+.btn-permiso-nav {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-permiso-nav:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .navbar-image {
     width: auto;
     height: 40px;
@@ -110,7 +150,8 @@
         font-size: 14px;
     }
 
-    .btn-navbar {
+    .btn-navbar,
+    .btn-navbar-permiso {
         padding: 5px 12px;
         font-size: 0.8rem;
     }

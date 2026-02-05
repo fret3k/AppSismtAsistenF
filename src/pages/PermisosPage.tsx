@@ -5,6 +5,9 @@ import { personalService } from '../services/personalService';
 import type { SolicitudAusencia, SolicitudAusenciaCreate } from '../types/permisos';
 import type { PersonalResponseDTO } from '../types';
 import Icon from '../components/Icon';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { REPORT_IMAGES } from '../utils/reportImages';
 import './PermisosPage.css';
 
 interface PermisosPageProps {
@@ -70,7 +73,10 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
     const generateBoleta = () => {
         const d = new Date();
-        const dateStr = d.toISOString().slice(0, 10).replace(/-/g, '');
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${y}${m}${day}`;
         return `BOL-${dateStr}-${Math.floor(1000 + Math.random() * 9000)}`;
     }
 
@@ -214,6 +220,16 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
 
     const formatDate = (dateStr: string) => {
+        if (!dateStr) return '';
+        // Si es una cadena YYYY-MM-DD, tratarla como local para evitar el desfase UTC
+        if (dateStr.length === 10 && dateStr.includes('-')) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
         return new Date(dateStr).toLocaleDateString('es-ES', {
             day: '2-digit',
             month: 'short',
@@ -221,10 +237,127 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
         });
     };
 
+    // Función para exportar a PDF
+    const exportarPDF = () => {
+        if (filteredSolicitudes.length === 0) return;
+
+        const doc = new jsPDF();
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const centerX = pageWidth / 2;
+
+        try {
+            // 1. Escudo (Izquierda)
+            if (REPORT_IMAGES.ESCUDO_PERU) {
+                doc.addImage(REPORT_IMAGES.ESCUDO_PERU, 'PNG', 14, 10, 18, 20);
+            }
+
+            // 2. Logo PJ (Centro - Arriba)
+            if (REPORT_IMAGES.LOGO_PJ) {
+                doc.addImage(REPORT_IMAGES.LOGO_PJ, 'PNG', centerX - 10, 8, 20, 18);
+            }
+
+            // 3. Logo Bicentenario (Derecha)
+            if (REPORT_IMAGES.LOGO_BICENTENARIO) {
+                doc.addImage(REPORT_IMAGES.LOGO_BICENTENARIO, 'PNG', pageWidth - 40, 10, 25, 12);
+            }
+        } catch (error) {
+            console.error("Error adding images to PDF:", error);
+        }
+
+        // Títulos Centrales
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.text("Corte Superior de Justicia de Apurimac", centerX, 35, { align: 'center' });
+
+        doc.setFontSize(12);
+        doc.text("Administracion del Modulo Penal de Abancay", centerX, 42, { align: 'center' });
+
+        // Frase "Decenio..."
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(80);
+        doc.text('"Decenio de la Igualdad de oportunidades para mujeres y hombres"', centerX, 52, { align: 'center' });
+        doc.text('"Año de la recuperación y consolidación de la economía peruana"', centerX, 57, { align: 'center' });
+
+        // Título del reporte
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(0);
+        const tituloReporte = mode === 'admin' ? 'REPORTE DE GESTIÓN DE PERMISOS' : 'MIS SOLICITUDES DE PERMISOS';
+        doc.text(tituloReporte, centerX, 68, { align: 'center' });
+
+        // Lugar y Fecha
+        const fechaActual = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(11);
+        doc.text(`Abancay, ${fechaActual}`, 14, 78);
+
+        // Tabla
+        const tableColumn = mode === 'admin'
+            ? ["N°", "Boleta", "DNI", "Nombres", "Códigos", "Estado", "Fecha Sol."]
+            : ["N°", "Boleta", "Códigos", "Motivo", "Estado", "Fecha Sol."];
+
+        const tableRows = filteredSolicitudes.map((item, index) => {
+            const meta = getSolicitudMeta(item);
+            if (mode === 'admin') {
+                return [
+                    index + 1,
+                    meta.numero_boleta || '-',
+                    userDNIs[item.personal_id] || '-',
+                    userNames[item.personal_id] || '-',
+                    meta.codigos.join(', ') || '-',
+                    item.estado_solicitud,
+                    formatDate(item.fecha_solicitud)
+                ];
+            } else {
+                return [
+                    index + 1,
+                    meta.numero_boleta || '-',
+                    meta.codigos.join(', ') || '-',
+                    meta.motivo.substring(0, 30) + (meta.motivo.length > 30 ? '...' : ''),
+                    item.estado_solicitud,
+                    formatDate(item.fecha_solicitud)
+                ];
+            }
+        });
+
+        autoTable(doc, {
+            head: [tableColumn],
+            body: tableRows,
+            startY: 85,
+            theme: 'grid',
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+                valign: 'middle'
+            },
+            headStyles: {
+                fillColor: [102, 126, 234],
+                textColor: 255,
+                halign: 'center',
+                valign: 'middle',
+                minCellHeight: 12
+            },
+            bodyStyles: {
+                minCellHeight: 10
+            },
+            columnStyles: {
+                0: { halign: 'center', cellWidth: 10 },
+                4: { halign: 'center' },
+                5: { halign: 'center' },
+                6: { halign: 'center' },
+            }
+        });
+
+        const estadoFiltro = activeTab === 'all' ? 'Todos' : activeTab;
+        doc.save(`Reporte_Permisos_${estadoFiltro}_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     // When opening the form, prefill boleta and default dates automatically
     useEffect(() => {
         if (showForm) {
-            const today = new Date().toISOString().slice(0, 10);
+            const d = new Date();
+            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             setNumeroBoleta(generateBoleta());
             setDependencia('');
             setCargo('');
@@ -367,6 +500,16 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                     <Icon name={showForm ? 'x' : 'plus'} size={20} />
                     {showForm ? 'Cancelar' : 'Nueva Solicitud'}
                 </button>
+
+                <button
+                    className="btn-export-pdf"
+                    onClick={exportarPDF}
+                    disabled={filteredSolicitudes.length === 0}
+                    title="Exportar lista a PDF"
+                >
+                    <Icon name="printer" size={20} />
+                    PDF
+                </button>
             </div>
 
             {/* Create Form */}
@@ -377,53 +520,51 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                         Nueva Solicitud de Permiso
                     </h2>
                     <form onSubmit={handleCreate}>
-                        {mode === 'admin' && (
-                            <div className="search-section-separate" style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid #e5e7eb' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Buscar Empleado</label>
-                                <div className="employee-search">
-                                    <input
-                                        type="text"
-                                        placeholder="DNI o nombre..."
-                                        value={employeeSearch}
-                                        onChange={e => {
-                                            const val = e.target.value;
-                                            setEmployeeSearch(val);
-                                            setShowEmployeeDropdown(true);
-
-                                            // If user types only digits and matches exact DNI, auto-select the employee
-                                            const onlyDigits = /^\d+$/.test(val.trim());
-                                            if (onlyDigits) {
-                                                const found = listaPersonal.find(p => p.dni === val.trim());
-                                                if (found) {
-                                                    setSelectedPersonalId(found.id);
-                                                    setShowEmployeeDropdown(false);
-                                                    setEmployeeSearch(`${found.dni} - ${found.nombre} ${found.apellido_paterno}`);
-                                                }
-                                            } else {
-                                                // if not digits, clear selection while typing names
-                                                setSelectedPersonalId('');
-                                            }
-                                        }}
-                                        onFocus={() => setShowEmployeeDropdown(true)}
-                                        required={mode === 'admin'}
-                                    />
-                                    {showEmployeeDropdown && (
-                                        <div className="employee-dropdown">
-                                            {listaPersonal.filter(p => {
-                                                const term = employeeSearch.toLowerCase();
-                                                return p.dni.includes(term) || (`${p.nombre} ${p.apellido_paterno} ${p.apellido_materno}`).toLowerCase().includes(term);
-                                            }).slice(0, 10).map(p => (
-                                                <div key={p.id} className="employee-item" onClick={() => { setSelectedPersonalId(p.id); setShowEmployeeDropdown(false); setEmployeeSearch(`${p.dni} - ${p.nombre} ${p.apellido_paterno}`); }}>
-                                                    <strong>{p.dni}</strong> — {p.nombre} {p.apellido_paterno} {p.apellido_materno}
-                                                </div>
-                                            )) || <div className="employee-item empty">No se encontraron resultados</div>}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
                         <div className="form-grid">
+                            {mode === 'admin' && (
+                                <div className="form-group full-width">
+                                    <label>Buscar Empleado *</label>
+                                    <div className="employee-search">
+                                        <input
+                                            type="text"
+                                            placeholder="DNI o nombre..."
+                                            value={employeeSearch}
+                                            onChange={e => {
+                                                const val = e.target.value;
+                                                setEmployeeSearch(val);
+                                                setShowEmployeeDropdown(true);
+
+                                                const onlyDigits = /^\d+$/.test(val.trim());
+                                                if (onlyDigits) {
+                                                    const found = listaPersonal.find(p => p.dni === val.trim());
+                                                    if (found) {
+                                                        setSelectedPersonalId(found.id);
+                                                        setShowEmployeeDropdown(false);
+                                                        setEmployeeSearch(`${found.dni} - ${found.nombre} ${found.apellido_paterno}`);
+                                                    }
+                                                } else {
+                                                    setSelectedPersonalId('');
+                                                }
+                                            }}
+                                            onFocus={() => setShowEmployeeDropdown(true)}
+                                            required={mode === 'admin'}
+                                        />
+                                        {showEmployeeDropdown && (
+                                            <div className="employee-dropdown">
+                                                {listaPersonal.filter(p => {
+                                                    const term = employeeSearch.toLowerCase();
+                                                    return p.dni.includes(term) || (`${p.nombre} ${p.apellido_paterno} ${p.apellido_materno}`).toLowerCase().includes(term);
+                                                }).slice(0, 10).map(p => (
+                                                    <div key={p.id} className="employee-item" onClick={() => { setSelectedPersonalId(p.id); setShowEmployeeDropdown(false); setEmployeeSearch(`${p.dni} - ${p.nombre} ${p.apellido_paterno}`); }}>
+                                                        <strong>{p.dni}</strong> — {p.nombre} {p.apellido_paterno} {p.apellido_materno}
+                                                    </div>
+                                                )) || <div className="employee-item empty">No se encontraron resultados</div>}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="form-group">
                                 <label>N° Boleta</label>
                                 <input type="text" value={numeroBoleta} readOnly onChange={e => setNumeroBoleta(e.target.value)} />
@@ -431,22 +572,41 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
                             <div className="form-group">
                                 <label>Dependencia</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={dependencia}
                                     onChange={e => setDependencia(e.target.value)}
-                                    placeholder="Ingrese dependencia"
-                                />
+                                >
+                                    <option value="">(Seleccionar)</option>
+                                    <option value="CIVIL">CIVIL</option>
+                                    <option value="EXTINCIÓN DE DOMINIO">EXTINCIÓN DE DOMINIO</option>
+                                    <option value="FAMILIA CIVIL">FAMILIA CIVIL</option>
+                                    <option value="FAMILIA PENAL">FAMILIA PENAL</option>
+                                    <option value="FAMILIA TUTELAR">FAMILIA TUTELAR</option>
+                                    <option value="LABORAL">LABORAL</option>
+                                    <option value="PENAL">PENAL</option>
+                                </select>
                             </div>
 
                             <div className="form-group">
                                 <label>Cargo</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={cargo}
                                     onChange={e => setCargo(e.target.value)}
-                                    placeholder="Ingrese cargo"
-                                />
+                                >
+                                    <option value="">(Seleccionar)</option>
+                                    <option value="Juez de Investigación Preparatoria">Juez de Investigación Preparatoria</option>
+                                    <option value="Juez Penal Unipersonal">Juez Penal Unipersonal</option>
+                                    <option value="Jueces del Juzgado Penal Colegiado">Jueces del Juzgado Penal Colegiado</option>
+                                    <option value="Jueces de la Sala Penal de Apelaciones">Jueces de la Sala Penal de Apelaciones</option>
+                                    <option value="Administrador del Módulo Penal">Administrador del Módulo Penal</option>
+                                    <option value="Coordinador de Audiencias">Coordinador de Audiencias</option>
+                                    <option value="Especialista Judicial de Juzgado (Causa)">Especialista Judicial de Juzgado (Causa)</option>
+                                    <option value="Especialista Judicial de Audiencia">Especialista Judicial de Audiencia</option>
+                                    <option value="Asistente Administrativo">Asistente Administrativo</option>
+                                    <option value="Asistente de Comunicaciones">Asistente de Comunicaciones</option>
+                                    <option value="Asistente de Custodia y Archivo">Asistente de Custodia y Archivo</option>
+                                    <option value="Especialista de Informática (Sistemas)">Especialista de Informática (Sistemas)</option>
+                                </select>
                             </div>
 
                             <div className="form-group">
@@ -458,8 +618,6 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                                 />
                             </div>
 
-
-
                             {/* Fechas se establecen automáticamente */}
                             <div className="form-group full-width">
                                 <div className="auto-date-notice">
@@ -468,16 +626,6 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                                 </div>
                             </div>
 
-                            <div className="form-group full-width">
-                                <label>Motivo / Detalle *</label>
-                                <textarea
-                                    rows={3}
-                                    value={formData.razon}
-                                    onChange={e => setFormData({ ...formData, razon: e.target.value })}
-                                    placeholder="Describe el motivo de la solicitud..."
-                                    required
-                                />
-                            </div>
 
                             <div className="form-group full-width">
                                 <label>Seleccione Código(s)</label>
@@ -510,6 +658,17 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                                     ))}
                                 </div>
                             </div>
+
+                            <div className="form-group full-width">
+                                <label>Motivo / Detalle *</label>
+                                <textarea
+                                    rows={3}
+                                    value={formData.razon}
+                                    onChange={e => setFormData({ ...formData, razon: e.target.value })}
+                                    placeholder="Describe el motivo de la solicitud..."
+                                    required
+                                />
+                            </div>
                         </div>
 
                         <div className="form-actions">
@@ -522,7 +681,7 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                             </button>
                         </div>
                     </form>
-                </div>
+                </div >
             )}
 
             {/* Tabs */}
@@ -554,11 +713,13 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
             </div>
 
             {/* Search Results Info */}
-            {searchTerm && mode === 'admin' && (
-                <div className="search-results-info">
-                    Mostrando {filteredSolicitudes.length} resultado(s) para "{searchTerm}"
-                </div>
-            )}
+            {
+                searchTerm && mode === 'admin' && (
+                    <div className="search-results-info">
+                        Mostrando {filteredSolicitudes.length} resultado(s) para "{searchTerm}"
+                    </div>
+                )
+            }
 
             {/* List */}
             <div className="permisos-list">
@@ -670,7 +831,7 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                     })
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 

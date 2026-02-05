@@ -78,6 +78,7 @@ export type Personal = PersonalResponseDTO;
 // User type for AuthContext
 export interface User {
     id: string;
+    dni: string;
     email: string;
     nombre: string;
     apellido_paterno: string;

@@ -9,7 +9,14 @@ const AsistenciasPage: React.FC = () => {
     // --- State ---
     const [activeTab, setActiveTab] = useState<'control' | 'historial'>('control');
     const [loading, setLoading] = useState(false);
-    const [currentDate, setCurrentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+
+    // Helper to get local date string YYYY-MM-DD
+    const getLocalDateString = () => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+
+    const [currentDate, setCurrentDate] = useState<string>(getLocalDateString());
 
     // Control Diario Data
     const [personalStatuses, setPersonalStatuses] = useState<PersonalStatusDTO[]>([]);
@@ -18,8 +25,8 @@ const AsistenciasPage: React.FC = () => {
 
     // Historial Data
     const [history, setHistory] = useState<HistorialAsistenciaDTO[]>([]);
-    const [histStartDate, setHistStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
-    const [histEndDate, setHistEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [histStartDate, setHistStartDate] = useState<string>(getLocalDateString());
+    const [histEndDate, setHistEndDate] = useState<string>(getLocalDateString());
     const [histUnknownFilter, setHistUnknownFilter] = useState(''); // Text filter for history table if server filter fails or supplements it
 
     // --- Effects ---
@@ -81,7 +88,7 @@ const AsistenciasPage: React.FC = () => {
         const ws = XLSX.utils.json_to_sheet(dataToExport);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Reporte");
-        XLSX.writeFile(wb, `Reporte_Asistencias_${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.writeFile(wb, `Reporte_Asistencias_${getLocalDateString()}.xlsx`);
     };
 
     // --- Render Helpers ---
@@ -134,7 +141,7 @@ const AsistenciasPage: React.FC = () => {
                                             onChange={(e) => setCurrentDate(e.target.value)}
                                         />
                                     </div>
-                                    <button className="btn-today-minimal" onClick={() => setCurrentDate(new Date().toISOString().split('T')[0])}>
+                                    <button className="btn-today-minimal" onClick={() => setCurrentDate(getLocalDateString())}>
                                         Hoy
                                     </button>
                                 </div>
