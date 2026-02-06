@@ -25,18 +25,20 @@ const Navbar: React.FC = () => {
                 </Link>
 
                 <div className="navbar-actions">
-                    {/* Mostrar botón de Dashboard si está autenticado, sino mostrar Iniciar Sesión */}
+                    {/* Botón de Marcar Permiso siempre visible */}
+                    <Link
+                        to={isPermisoPage ? "/" : "/marcar-permiso"}
+                        className="btn-navbar btn-permiso-nav"
+                    >
+                        {isPermisoPage ? "Regresar" : "Marcar Permiso"}
+                    </Link>
+
+                    {/* Mostrar Dashboard y foto si está autenticado, sino mostrar Iniciar Sesión */}
                     {isAuthenticated ? (
                         <div className="navbar-user">
                             {user?.foto_base64 && (
                                 <img src={user.foto_base64} alt="Perfil" className="navbar-avatar-min" />
                             )}
-                            <Link
-                                to={isPermisoPage ? "/" : "/marcar-permiso"}
-                                className="btn-navbar btn-permiso-nav"
-                            >
-                                {isPermisoPage ? "Regresar" : "Marcar Permiso"}
-                            </Link>
                             <Link to="/dashboard" className="btn-navbar">
                                 Dashboard
                             </Link>
