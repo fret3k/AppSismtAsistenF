@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
 import * as faceapi from 'face-api.js';
 import Icon from '../components/Icon';
 import './ControlEntradaSalidaPage.css';
@@ -10,15 +9,16 @@ interface RegistroTiempo {
     fecha: string;
     estado: 'success' | 'error';
     mensaje?: string;
+    usuario?: string;
 }
 
-interface ResumenJornada {
-    horaEntrada: string | null;
-    horaSalida: string | null;
-    horasTrabajadas: string;
-    minutosTrabajados: number;
-    tiempoAusencia: string;
-    minutosAusencia: number;
+interface UsuarioIdentificado {
+    personal_id: number;
+    nombre: string;
+    apellido_paterno: string;
+    apellido_materno?: string;
+    dni?: string;
+    usuario?: string;
 }
 
 interface ControlEntradaSalidaPageProps {
@@ -26,28 +26,20 @@ interface ControlEntradaSalidaPageProps {
 }
 
 const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mode = 'permiso' }) => {
-    const { user } = useAuth();
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const detectionIntervalRef = useRef<number | null>(null);
+    const autoDetectionRef = useRef<number | null>(null);
 
     // Estados de cámara
     const [isCameraActive, setIsCameraActive] = useState(false);
     const [modelsLoaded, setModelsLoaded] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isIdentifying, setIsIdentifying] = useState(false);
 
     // Estados de UI
     const [statusMessage, setStatusMessage] = useState("Cargando modelos...");
-    const [resumenHoy, setResumenHoy] = useState<ResumenJornada>({
-        horaEntrada: null,
-        horaSalida: null,
-        horasTrabajadas: '0h 0m',
-        minutosTrabajados: 0,
-        tiempoAusencia: '0h 0m',
-        minutosAusencia: 0
-    });
-    const [historialHoy, setHistorialHoy] = useState<RegistroTiempo[]>([]);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successData, setSuccessData] = useState<{ tipo: string; hora: string; usuario: string } | null>(null);
@@ -56,54 +48,21 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
     const [faceDetectionThreshold] = useState(0.75);
     const [faceDetectionMargin] = useState(0.06);
 
-    // Permisos aprobados
+    // Estado del usuario identificado (modo kiosco)
+    const [identifiedUser, setIdentifiedUser] = useState<UsuarioIdentificado | null>(null);
     const [approvedPermissions, setApprovedPermissions] = useState<any[]>([]);
     const [selectedPermisoId, setSelectedPermisoId] = useState("");
+    const [historialReciente, setHistorialReciente] = useState<RegistroTiempo[]>([]);
 
     const API_BASE_URL = 'http://localhost:8000';
 
-    // Importar servicio dinámicamente o asumir que existe global (mejor importar arriba si posible, pero aquí mantenemos estructura)
-    // Usaremos fetch directo o el servicio si lo importamos.
-    // Vamos a usar fetch directo para simplificar sin imports extras que rompan el bloque, 
-    // pero lo ideal es importar permisosService. Asumiremos que podemos hacer fetch.
-
     // Textos dinámicos según modo
     const isPermiso = mode === 'permiso';
-    const title = isPermiso ? "Control de Permisos" : "Control de Asistencia";
+    const title = isPermiso ? "Control de Permisos - Kiosco" : "Control de Asistencia";
     const btnEntradaText = isPermiso ? "Retorno de Permiso" : "Marcar Entrada";
     const btnSalidaText = isPermiso ? "Salida por Permiso" : "Marcar Salida";
 
-    // Cargar permisos aprobados
-    const loadApprovedPermissions = useCallback(async () => {
-        if (!user?.id || !isPermiso) return;
-        try {
-            // Usar endpoint de permisos o filtrar. 
-            // GET /solicitudes-ausencias/personal/{id}
-            const response = await fetch(`${API_BASE_URL}/solicitudes-ausencias/personal/${user.id}`);
-            if (response.ok) {
-                const data = await response.json();
-                const d = new Date();
-                const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-
-                // Filtrar: APROBADA y fecha coincide con hoy
-                const validos = data.filter((p: any) =>
-                    p.estado_solicitud === 'APROBADA' &&
-                    p.fecha_inicio === today
-                    // Podríamos filtrar si ya fue "usado" (tiene hora_inicio marcada con hora real en control_tiempo),
-                    // pero por ahora mostrar todos los aprobados de hoy.
-                );
-                setApprovedPermissions(validos);
-            }
-        } catch (error) {
-            console.error("Error loading permissions", error);
-        }
-    }, [user?.id, isPermiso]);
-
-    useEffect(() => {
-        loadApprovedPermissions();
-    }, [loadApprovedPermissions]);
-
-    // Helper para parsear metadata
+    // Helper para parsear metadata de solicitud
     const getSolicitudMeta = (s: any) => {
         try {
             const parsed = JSON.parse(s.razon || '{}');
@@ -120,38 +79,50 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
         }
     };
 
-    // Cargar historial del día
-    const loadTodayHistory = useCallback(async () => {
+    // Cargar permisos aprobados para el usuario identificado
+    const loadApprovedPermissionsForUser = useCallback(async (userId: number) => {
+        if (!isPermiso) return;
         try {
-            const d = new Date();
-            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            const response = await fetch(`${API_BASE_URL}/control-tiempo/personal/${user?.id}?fecha=${today}`);
+            const response = await fetch(`${API_BASE_URL}/solicitudes-ausencias/personal/${userId}`);
             if (response.ok) {
                 const data = await response.json();
-                if (data.registros) {
-                    setHistorialHoy(data.registros);
-                    if (data.resumen) {
-                        setResumenHoy({
-                            horaEntrada: data.resumen.hora_entrada,
-                            horaSalida: data.resumen.hora_salida,
-                            horasTrabajadas: data.resumen.horas_trabajadas || '0h 0m',
-                            minutosTrabajados: data.resumen.minutos_trabajados || 0,
-                            tiempoAusencia: data.resumen.tiempo_ausencia || '0h 0m',
-                            minutosAusencia: data.resumen.minutos_ausencia || 0
-                        });
-                    }
+                const d = new Date();
+                const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+                // Filtrar: APROBADA y fecha coincide con hoy
+                const validos = data.filter((p: any) =>
+                    p.estado_solicitud === 'APROBADA' &&
+                    p.fecha_inicio === today
+                );
+                setApprovedPermissions(validos);
+
+                // Auto-seleccionar si solo hay uno
+                if (validos.length === 1) {
+                    setSelectedPermisoId(validos[0].id.toString());
                 }
             }
         } catch (error) {
-            console.error('Error loading today history:', error);
+            console.error("Error loading permissions for user", error);
         }
-    }, [user?.id]);
+    }, [isPermiso]);
 
-    useEffect(() => {
-        if (user?.id) {
-            loadTodayHistory();
-        }
-    }, [user, loadTodayHistory]);
+    // Resetear el estado para el siguiente usuario
+    const resetForNextUser = useCallback(() => {
+        setIdentifiedUser(null);
+        setApprovedPermissions([]);
+        setSelectedPermisoId("");
+        setStatusMessage("Posicione su rostro frente a la cámara");
+    }, []);
+
+    // Cerrar modal y resetear para siguiente usuario
+    const handleCloseSuccessModal = useCallback(() => {
+        setShowSuccessModal(false);
+        setSuccessData(null);
+        // Resetear para el siguiente usuario después de un breve delay
+        setTimeout(() => {
+            resetForNextUser();
+        }, 500);
+    }, [resetForNextUser]);
 
     // Actualizar reloj
     useEffect(() => {
@@ -170,7 +141,7 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                 faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
             ]);
             setModelsLoaded(true);
-            setStatusMessage("Listo para registrar");
+            setStatusMessage("Encienda la cámara para comenzar");
         } catch (error) {
             console.error("Error al cargar modelos:", error);
             setStatusMessage("Error al cargar modelos de reconocimiento");
@@ -179,10 +150,12 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
 
     useEffect(() => {
         loadModels();
-        // Limpieza al desmontar
         return () => {
             if (streamRef.current) {
                 streamRef.current.getTracks().forEach(track => track.stop());
+            }
+            if (autoDetectionRef.current) {
+                clearInterval(autoDetectionRef.current);
             }
         };
     }, [loadModels]);
@@ -212,6 +185,10 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
             clearInterval(detectionIntervalRef.current);
             detectionIntervalRef.current = null;
         }
+        if (autoDetectionRef.current) {
+            clearInterval(autoDetectionRef.current);
+            autoDetectionRef.current = null;
+        }
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             if (videoRef.current) {
@@ -221,7 +198,8 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
             setIsCameraActive(false);
             setStatusMessage("Cámara apagada");
         }
-    }, []);
+        resetForNextUser();
+    }, [resetForNextUser]);
 
     const toggleCamera = useCallback(() => {
         if (isCameraActive) {
@@ -245,7 +223,7 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
         return '';
     }, []);
 
-    // Detectar rostro
+    // Detectar rostro y dibujar caja
     const detectFace = useCallback(async () => {
         if (!videoRef.current || !canvasRef.current || !modelsLoaded) {
             return { faceDetected: false, descriptor: null };
@@ -281,26 +259,26 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
         return { faceDetected: false, descriptor: null };
     }, [modelsLoaded]);
 
-    const registrarTiempo = async (tipo: 'ENTRADA' | 'SALIDA') => {
-        if (!isCameraActive || !modelsLoaded || isProcessing) return;
+    // Identificar usuario por reconocimiento facial
+    const identifyUser = useCallback(async () => {
+        if (!isCameraActive || !modelsLoaded || isIdentifying || isProcessing || identifiedUser) return;
 
-        setIsProcessing(true);
-        const actionText = tipo === 'ENTRADA' ? btnEntradaText : btnSalidaText;
-        setStatusMessage(`Verificando identidad para ${actionText.toLowerCase()}...`);
+        setIsIdentifying(true);
+        setStatusMessage("Buscando rostro...");
 
         try {
             const result = await detectFace();
 
             if (!result.faceDetected || !result.descriptor) {
-                setStatusMessage("No se detectó un rostro. Intente de nuevo.");
-                setIsProcessing(false);
+                setStatusMessage("Posicione su rostro frente a la cámara");
+                setIsIdentifying(false);
                 return;
             }
 
+            setStatusMessage("Identificando...");
             const imagenBase64 = captureImageBase64();
             const embeddingArray = Array.from(result.descriptor);
 
-            // Verificar identidad
             const verifyResponse = await fetch(`${API_BASE_URL}/asistencia/realtime`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -314,9 +292,8 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
             });
 
             if (!verifyResponse.ok) {
-                const errorData = await verifyResponse.json();
-                setStatusMessage(errorData.detail || "No se pudo verificar la identidad");
-                setIsProcessing(false);
+                setStatusMessage("No se pudo verificar. Intente de nuevo.");
+                setIsIdentifying(false);
                 return;
             }
 
@@ -324,16 +301,70 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
 
             if (!verifyData.reconocido) {
                 setStatusMessage("Rostro no reconocido. Asegúrese de estar registrado.");
-                setIsProcessing(false);
+                setIsIdentifying(false);
                 return;
             }
 
+            // Usuario identificado exitosamente
+            const usuario: UsuarioIdentificado = {
+                personal_id: verifyData.personal_id,
+                nombre: verifyData.nombre || verifyData.usuario?.split(' ')[0] || 'Usuario',
+                apellido_paterno: verifyData.apellido_paterno || verifyData.usuario?.split(' ')[1] || '',
+                apellido_materno: verifyData.apellido_materno,
+                dni: verifyData.dni,
+                usuario: verifyData.usuario
+            };
+
+            setIdentifiedUser(usuario);
+            setStatusMessage(`¡Bienvenido, ${usuario.nombre}!`);
+
+            // Cargar permisos aprobados para este usuario
+            await loadApprovedPermissionsForUser(usuario.personal_id);
+
+        } catch (error) {
+            console.error('Error identifying user:', error);
+            setStatusMessage("Error de conexión. Intente de nuevo.");
+        } finally {
+            setIsIdentifying(false);
+        }
+    }, [isCameraActive, modelsLoaded, isIdentifying, isProcessing, identifiedUser, detectFace, captureImageBase64, faceDetectionThreshold, faceDetectionMargin, loadApprovedPermissionsForUser]);
+
+    // Detección automática continua
+    useEffect(() => {
+        if (isCameraActive && modelsLoaded && !identifiedUser && !showSuccessModal) {
+            // Iniciar detección automática cada 2 segundos
+            autoDetectionRef.current = window.setInterval(() => {
+                identifyUser();
+            }, 2000);
+        } else {
+            if (autoDetectionRef.current) {
+                clearInterval(autoDetectionRef.current);
+                autoDetectionRef.current = null;
+            }
+        }
+
+        return () => {
+            if (autoDetectionRef.current) {
+                clearInterval(autoDetectionRef.current);
+            }
+        };
+    }, [isCameraActive, modelsLoaded, identifiedUser, showSuccessModal, identifyUser]);
+
+    // Registrar tiempo (entrada/salida)
+    const registrarTiempo = async (tipo: 'ENTRADA' | 'SALIDA') => {
+        if (!isCameraActive || !modelsLoaded || isProcessing || !identifiedUser) return;
+
+        setIsProcessing(true);
+        const actionText = tipo === 'ENTRADA' ? btnEntradaText : btnSalidaText;
+        setStatusMessage(`Registrando ${actionText.toLowerCase()}...`);
+
+        try {
             // Registrar el tiempo
             const registroResponse = await fetch(`${API_BASE_URL}/control-tiempo/registrar`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    personal_id: verifyData.personal_id || user?.id,
+                    personal_id: identifiedUser.personal_id,
                     tipo_registro: tipo,
                     categoria: mode,
                     solicitud_id: isPermiso && tipo === 'SALIDA' ? selectedPermisoId : undefined
@@ -347,30 +378,20 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                     tipo: tipo,
                     hora: registroData.hora || new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }),
                     fecha: new Date().toLocaleDateString('es-PE'),
-                    estado: 'success'
+                    estado: 'success',
+                    usuario: identifiedUser.usuario || `${identifiedUser.nombre} ${identifiedUser.apellido_paterno}`
                 };
 
-                setHistorialHoy(prev => [nuevoRegistro, ...prev]);
-
-                // Actualizar resumen localmente
-                if (tipo === 'ENTRADA') {
-                    setResumenHoy(prev => ({ ...prev, horaEntrada: nuevoRegistro.hora }));
-                } else {
-                    setResumenHoy(prev => ({ ...prev, horaSalida: nuevoRegistro.hora }));
-                }
+                setHistorialReciente(prev => [nuevoRegistro, ...prev.slice(0, 4)]);
 
                 // Mostrar modal de éxito
                 setSuccessData({
                     tipo: actionText,
                     hora: nuevoRegistro.hora,
-                    usuario: verifyData.usuario || `${user?.nombre} ${user?.apellido_paterno}`
+                    usuario: identifiedUser.usuario || `${identifiedUser.nombre} ${identifiedUser.apellido_paterno}`
                 });
                 setShowSuccessModal(true);
-                setStatusMessage(`¡${actionText} completado correctamente!`);
-
-                setTimeout(() => {
-                    loadTodayHistory();
-                }, 1000);
+                setStatusMessage(`¡${actionText} completado!`);
 
             } else {
                 const errorData = await registroResponse.json();
@@ -399,8 +420,6 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
         return `${days[date.getDay()]}, ${date.getDate()} de ${months[date.getMonth()]} de ${date.getFullYear()}`;
     };
-
-    // función captureImageBase64 eliminada por duplicidad
 
     return (
         <div className="control-entrada-salida-page">
@@ -463,7 +482,7 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                         </div>
 
                         <div className="status-message">
-                            {isProcessing ? (
+                            {(isProcessing || isIdentifying) ? (
                                 <div className="processing">
                                     <span className="spinner"></span>
                                     <span>{statusMessage}</span>
@@ -473,8 +492,50 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                             )}
                         </div>
 
+                        {/* Mostrar información del usuario identificado */}
+                        {identifiedUser && (
+                            <div className="identified-user-card" style={{
+                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                padding: '1rem',
+                                borderRadius: '0.75rem',
+                                marginBottom: '1rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <Icon name="user-check" size={32} color="white" />
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                                            {identifiedUser.nombre} {identifiedUser.apellido_paterno}
+                                        </div>
+                                        {identifiedUser.dni && (
+                                            <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                                                DNI: {identifiedUser.dni}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={resetForNextUser}
+                                    style={{
+                                        background: 'rgba(255,255,255,0.2)',
+                                        border: 'none',
+                                        color: 'white',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '0.5rem',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem'
+                                    }}
+                                >
+                                    Cambiar Usuario
+                                </button>
+                            </div>
+                        )}
+
                         <div className="action-buttons">
-                            {isPermiso ? (
+                            {isPermiso && identifiedUser ? (
                                 <>
                                     <div className="permission-selector" style={{ marginBottom: '1rem', width: '100%' }}>
                                         <select
@@ -487,12 +548,11 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                                                 border: '1px solid #d1d5db',
                                                 backgroundColor: selectedPermisoId ? 'white' : '#f9fafb'
                                             }}
-                                            disabled={!isCameraActive || isProcessing}
+                                            disabled={isProcessing}
                                         >
                                             <option value="">-- Seleccione Permiso Aprobado --</option>
                                             {approvedPermissions.length > 0 ? (
                                                 approvedPermissions.map(p => {
-                                                    // Intentar extraer el motivo legible del JSON 'razon' o usar la raw string
                                                     let label = p.razon;
                                                     try {
                                                         const parsed = JSON.parse(p.razon);
@@ -505,7 +565,7 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                                                     );
                                                 })
                                             ) : (
-                                                <option disabled>No tienes permisos aprobados para hoy</option>
+                                                <option disabled>No tiene permisos aprobados para hoy</option>
                                             )}
                                         </select>
                                         {approvedPermissions.length === 0 && (
@@ -517,7 +577,7 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                                     <button
                                         className="btn-salida"
                                         onClick={() => registrarTiempo('SALIDA')}
-                                        disabled={!isCameraActive || isProcessing || !selectedPermisoId}
+                                        disabled={isProcessing || !selectedPermisoId}
                                         style={{ opacity: !selectedPermisoId ? 0.6 : 1 }}
                                     >
                                         <Icon name="log-out" size={24} />
@@ -526,18 +586,32 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                                     <button
                                         className="btn-entrada"
                                         onClick={() => registrarTiempo('ENTRADA')}
-                                        disabled={!isCameraActive || isProcessing}
+                                        disabled={isProcessing}
                                     >
                                         <Icon name="log-in" size={24} />
                                         <span>{btnEntradaText}</span>
                                     </button>
                                 </>
+                            ) : isPermiso && !identifiedUser ? (
+                                <div style={{
+                                    textAlign: 'center',
+                                    padding: '2rem',
+                                    color: '#6b7280',
+                                    background: '#f9fafb',
+                                    borderRadius: '0.75rem',
+                                    width: '100%'
+                                }}>
+                                    <Icon name="user" size={48} color="#9ca3af" />
+                                    <p style={{ marginTop: '1rem', fontSize: '1rem' }}>
+                                        {isCameraActive ? 'Detectando rostro automáticamente...' : 'Encienda la cámara para comenzar'}
+                                    </p>
+                                </div>
                             ) : (
                                 <>
                                     <button
                                         className="btn-entrada"
                                         onClick={() => registrarTiempo('ENTRADA')}
-                                        disabled={!isCameraActive || isProcessing}
+                                        disabled={!isCameraActive || isProcessing || !identifiedUser}
                                     >
                                         <Icon name="log-in" size={24} />
                                         <span>{btnEntradaText}</span>
@@ -545,7 +619,7 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                                     <button
                                         className="btn-salida"
                                         onClick={() => registrarTiempo('SALIDA')}
-                                        disabled={!isCameraActive || isProcessing}
+                                        disabled={!isCameraActive || isProcessing || !identifiedUser}
                                     >
                                         <Icon name="log-out" size={24} />
                                         <span>{btnSalidaText}</span>
@@ -556,54 +630,52 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                     </div>
                 </div>
 
-                {/* Panel de Resumen */}
+                {/* Panel de Historial Reciente */}
                 <div className="summary-panel">
-                    <div className="summary-card">
-                        <h3>Resumen del Día</h3>
-                        <div className="summary-stats">
-                            <div className="stat-box">
-                                <span className="label">Entrada</span>
-                                <span className="value">{resumenHoy.horaEntrada || '--:--'}</span>
-                            </div>
-                            <div className="stat-box">
-                                <span className="label">Salida</span>
-                                <span className="value">{resumenHoy.horaSalida || '--:--'}</span>
-                            </div>
-                            <div className="stat-box highlight">
-                                <span className="label">Horas Trab.</span>
-                                <span className="value">{resumenHoy.horasTrabajadas}</span>
-                            </div>
-                            <div className="stat-box">
-                                <span className="label">Tiempo Ausencia</span>
-                                <span className="value">{resumenHoy.tiempoAusencia}</span>
-                            </div>
-                        </div>
-                    </div>
-
                     <div className="history-card">
-                        <h3>Registros de Hoy</h3>
+                        <h3>Registros Recientes</h3>
                         <div className="history-list">
-                            {historialHoy.length === 0 ? (
-                                <p className="no-records">Sin registros hoy</p>
+                            {historialReciente.length === 0 ? (
+                                <p className="no-records">Sin registros recientes</p>
                             ) : (
-                                historialHoy.map((reg, idx) => (
-                                    <div key={idx} className="history-item">
+                                historialReciente.map((reg, idx) => (
+                                    <div key={idx} className="history-item" style={{
+                                        background: idx === 0 ? 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' : undefined,
+                                        borderLeft: idx === 0 ? '3px solid #10b981' : undefined
+                                    }}>
                                         <div className="history-icon">
                                             <Icon name={reg.tipo === 'ENTRADA' ? 'log-in' : 'log-out'} size={16} />
                                         </div>
-                                        <div className="history-details">
+                                        <div className="history-details" style={{ flex: 1 }}>
                                             <span className="history-type">{reg.tipo}</span>
                                             <span className="history-time">{reg.hora}</span>
                                         </div>
+                                        {reg.usuario && (
+                                            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                                                {reg.usuario}
+                                            </div>
+                                        )}
                                     </div>
                                 ))
                             )}
                         </div>
                     </div>
+
+                    {/* Instrucciones de uso */}
+                    <div className="summary-card" style={{ marginTop: '1rem' }}>
+                        <h3>Instrucciones</h3>
+                        <div style={{ fontSize: '0.9rem', color: '#4b5563', lineHeight: 1.6 }}>
+                            <p><strong>1.</strong> Encienda la cámara</p>
+                            <p><strong>2.</strong> Posicione su rostro frente a la cámara</p>
+                            <p><strong>3.</strong> Espere a ser identificado</p>
+                            <p><strong>4.</strong> Seleccione su permiso aprobado</p>
+                            <p><strong>5.</strong> Presione el botón correspondiente</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* Modal de Éxito */}
+            {/* Modal de Éxito con auto-cierre */}
             {showSuccessModal && successData && (
                 <div className="modal-overlay">
                     <div className="success-modal">
@@ -616,7 +688,10 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                             <p className="success-time">{successData.hora}</p>
                             <p className="success-date">{formatDate(new Date())}</p>
                         </div>
-                        <button className="btn-close-modal" onClick={() => setShowSuccessModal(false)}>
+                        <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '1rem' }}>
+                            El sistema se reiniciará para el siguiente usuario
+                        </p>
+                        <button className="btn-close-modal" onClick={handleCloseSuccessModal}>
                             Aceptar
                         </button>
                     </div>

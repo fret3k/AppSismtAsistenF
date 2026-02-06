@@ -168,11 +168,27 @@ const MarcarPermisoPage: React.FC = () => {
         return null;
     }, []);
 
-    // Identificar usuario contra el backend (usando useCallback para evitar recreación)
-    const identifyUser = useCallback(async (descriptor: Float32Array, currentDetectedUser: any) => {
+    // Referencia para evitar múltiples llamadas simultáneas de identificación
+    const isIdentifyingRef = useRef(false);
+    const lastIdentificationTime = useRef(0);
+
+    // Identificar usuario contra el backend - SIEMPRE intenta identificar y actualiza si es diferente
+    const identifyUser = useCallback(async (descriptor: Float32Array) => {
+        // Evitar llamadas simultáneas y muy frecuentes
+        const now = Date.now();
+        if (isIdentifyingRef.current || (now - lastIdentificationTime.current) < 1500) {
+            return;
+        }
+
+        isIdentifyingRef.current = true;
+        lastIdentificationTime.current = now;
+
         try {
             const imageBase64 = captureImage();
-            if (!imageBase64) return;
+            if (!imageBase64) {
+                isIdentifyingRef.current = false;
+                return;
+            }
 
             const descriptorArray = Array.from(descriptor);
 
@@ -190,24 +206,43 @@ const MarcarPermisoPage: React.FC = () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.reconocido && data.personal_id) {
-                    // EVITAR RE-SETS SI ES EL MISMO
-                    if (currentDetectedUser?.id !== data.personal_id) {
-                        setDetectedUser({
-                            id: data.personal_id,
-                            nombre: data.usuario || 'Usuario Identificado',
-                            dni: '---'
-                        });
-                        setStatusMessage(`Hola, ${data.usuario}`);
-                        loadUserData(data.personal_id);
-                    }
+                    // Actualizar SIEMPRE que el usuario sea diferente
+                    setDetectedUser((prevUser: any) => {
+                        if (prevUser?.id !== data.personal_id) {
+                            // Usuario diferente detectado - actualizar todo
+                            setStatusMessage(`Hola, ${data.usuario}`);
+                            setPermisosAprobados([]); // Limpiar antes de cargar nuevos
+                            setRegistrosHoy([]);
+                            loadUserData(data.personal_id);
+                            return {
+                                id: data.personal_id,
+                                nombre: data.usuario || 'Usuario Identificado',
+                                dni: '---'
+                            };
+                        }
+                        return prevUser; // Mismo usuario, no cambiar
+                    });
+                } else if (!data.reconocido) {
+                    // Rostro no reconocido - limpiar usuario actual
+                    setDetectedUser((prevUser: any) => {
+                        if (prevUser) {
+                            setStatusMessage("Buscando rostro...");
+                            setPermisosAprobados([]);
+                            setRegistrosHoy([]);
+                            return null;
+                        }
+                        return prevUser;
+                    });
                 }
             }
         } catch (err) {
             console.error("Error identificando", err);
+        } finally {
+            isIdentifyingRef.current = false;
         }
     }, [captureImage, loadUserData]);
 
-    // Detección facial continua - función principal
+    // Detección facial continua - función principal - SIEMPRE intenta identificar
     const runDetection = useCallback(async () => {
         if (!videoRef.current || !canvasRef.current || !modelsLoaded || isProcessing) return;
 
@@ -257,16 +292,30 @@ const MarcarPermisoPage: React.FC = () => {
 
                     ctx.restore();
 
-                    // Intentar identificar si aún no hay usuario detectado
-                    if (!detectedUser) {
-                        await identifyUser(detection.descriptor, detectedUser);
-                    }
+                    // SIEMPRE intentar identificar al usuario actual 
+                    // La función identifyUser se encarga de no hacer llamadas muy frecuentes
+                    await identifyUser(detection.descriptor);
+                } else {
+                    // No se detectó rostro - limpiar usuario después de un tiempo
+                    setDetectedUser((prevUser: any) => {
+                        if (prevUser) {
+                            // Solo limpiar si ha pasado tiempo sin detectar rostro
+                            const now = Date.now();
+                            if ((now - lastIdentificationTime.current) > 3000) {
+                                setStatusMessage("Buscando rostro...");
+                                setPermisosAprobados([]);
+                                setRegistrosHoy([]);
+                                return null;
+                            }
+                        }
+                        return prevUser;
+                    });
                 }
             }
         } catch (err) {
             console.error("Error en detección:", err);
         }
-    }, [modelsLoaded, detectedUser, isProcessing, identifyUser]);
+    }, [modelsLoaded, isProcessing, identifyUser]);
 
     // useEffect para el loop de detección - se activa cuando la cámara está activa
     useEffect(() => {
