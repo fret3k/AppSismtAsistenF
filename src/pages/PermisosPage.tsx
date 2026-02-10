@@ -150,12 +150,30 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
             return;
         }
 
+        // Validar que se haya seleccionado al menos un código
+        if (codigosSeleccionados.length === 0) {
+            setError("Debe seleccionar un código");
+            return;
+        }
+
+        // Validar que se haya seleccionado dependencia
+        if (!dependencia) {
+            setError("Debe seleccionar una dependencia");
+            return;
+        }
+
+        // Validar que se haya seleccionado cargo
+        if (!cargo) {
+            setError("Debe seleccionar un cargo");
+            return;
+        }
+
         try {
             setSubmitting(true);
             setError(null);
             // Pack extra info as JSON into the 'razon' field so backend/database can store it without schema changes
             const extra = {
-                motivo: formData.razon,
+                motivo: formData.razon ? ` ${formData.razon.trim()}` : ' ',
                 numero_boleta: numeroBoleta,
                 codigos: codigosSeleccionados,
                 dependencia: dependencia,
@@ -383,7 +401,7 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
     }, [selectedPersonalId, listaPersonal]);
 
     const toggleCodigo = (code: string) => {
-        setCodigosSeleccionados(prev => prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]);
+        setCodigosSeleccionados([code]);
     };
 
     // Filter by search term (for admin) — now includes boleta, códigos y motivo
@@ -571,10 +589,11 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                             </div>
 
                             <div className="form-group">
-                                <label>Dependencia</label>
+                                <label>Dependencia *</label>
                                 <select
                                     value={dependencia}
                                     onChange={e => setDependencia(e.target.value)}
+                                    required
                                 >
                                     <option value="">(Seleccionar)</option>
                                     <option value="CIVIL">CIVIL</option>
@@ -588,10 +607,11 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                             </div>
 
                             <div className="form-group">
-                                <label>Cargo</label>
+                                <label>Cargo *</label>
                                 <select
                                     value={cargo}
                                     onChange={e => setCargo(e.target.value)}
+                                    required
                                 >
                                     <option value="">(Seleccionar)</option>
                                     <option value="Juez de Investigación Preparatoria">Juez de Investigación Preparatoria</option>
@@ -628,12 +648,13 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
 
 
                             <div className="form-group full-width">
-                                <label>Seleccione Código(s)</label>
+                                <label>Seleccione Código *</label>
                                 <div className="codes-grid">
                                     {CODE_OPTIONS_GENERAL.map(opt => (
                                         <label key={opt.code} className="code-checkbox">
                                             <input
-                                                type="checkbox"
+                                                type="radio"
+                                                name="codigo-general"
                                                 checked={codigosSeleccionados.includes(opt.code)}
                                                 onChange={() => toggleCodigo(opt.code)}
                                             />
@@ -649,7 +670,8 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                                     {CODE_OPTIONS_SPECIAL.map(opt => (
                                         <label key={opt.code} className="code-checkbox special">
                                             <input
-                                                type="checkbox"
+                                                type="radio"
+                                                name="codigo-general"
                                                 checked={codigosSeleccionados.includes(opt.code)}
                                                 onChange={() => toggleCodigo(opt.code)}
                                             />
@@ -660,13 +682,12 @@ const PermisosPage: React.FC<PermisosPageProps> = ({ mode }) => {
                             </div>
 
                             <div className="form-group full-width">
-                                <label>Motivo / Detalle *</label>
+                                <label>Motivo o Detalle Adicional (opcional)</label>
                                 <textarea
                                     rows={3}
                                     value={formData.razon}
                                     onChange={e => setFormData({ ...formData, razon: e.target.value })}
-                                    placeholder="Describe el motivo de la solicitud..."
-                                    required
+                                    placeholder="Describe el motivo o agregue detalles adicionales..."
                                 />
                             </div>
                         </div>
