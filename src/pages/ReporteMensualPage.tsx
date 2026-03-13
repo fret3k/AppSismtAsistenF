@@ -116,10 +116,10 @@ export const ReporteMensualPage = () => {
         // Títulos Centrales (Con más espaciado)
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
-        doc.text("Corte Superior de Justicia de Apurimac", centerX, 35, { align: 'center' });
+        doc.text("Corte Superior de Justicia de Apurímac", centerX, 35, { align: 'center' });
 
         doc.setFontSize(12);
-        doc.text("Administracion del Modulo Penal de Abancay", centerX, 42, { align: 'center' });
+        doc.text("Administración del Módulo Penal de Abancay", centerX, 42, { align: 'center' });
 
         // Frase "Decenio..."
         doc.setFont("helvetica", "normal");

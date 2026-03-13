@@ -682,7 +682,7 @@ const ControlEntradaSalidaPage: React.FC<ControlEntradaSalidaPageProps> = ({ mod
                         <div className="success-icon">
                             <Icon name="check-circle" size={64} color="#10b981" />
                         </div>
-                        <h2>{successData.tipo} Exitosa</h2>
+                        <h2>{successData.tipo} con Éxito</h2>
                         <div className="success-details">
                             <p className="user-name">{successData.usuario}</p>
                             <p className="success-time">{successData.hora}</p>

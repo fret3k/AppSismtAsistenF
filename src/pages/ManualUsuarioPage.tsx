@@ -36,10 +36,10 @@ const ManualUsuarioPage: React.FC = () => {
         doc.setFont("helvetica", "bold");
         doc.setFontSize(14);
         doc.setTextColor(0);
-        doc.text("Corte Superior de Justicia de Apurimac", centerX, 35, { align: 'center' });
+        doc.text("Corte Superior de Justicia de Apurímac", centerX, 35, { align: 'center' });
 
         doc.setFontSize(12);
-        doc.text("Administracion del Modulo Penal de Abancay", centerX, 42, { align: 'center' });
+        doc.text("Administración del Módulo Penal de Abancay", centerX, 42, { align: 'center' });
 
         // Frase "Decenio..."
         doc.setFont("helvetica", "normal");
@@ -104,7 +104,7 @@ const ManualUsuarioPage: React.FC = () => {
 
         doc.setFontSize(11);
         doc.setTextColor(80);
-        doc.text("Corte Superior de Justicia de Apurimac\n2024", margin, 260);
+        doc.text("Corte Superior de Justicia de Apurímac\n2024", margin, 260);
 
         // --- PÁGINA 2: ÍNDICE ---
         doc.addPage();

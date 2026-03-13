@@ -29,7 +29,7 @@ const Sidebar: React.FC = () => {
                 section: 'Principal',
                 items: [
                     { path: '/dashboard', icon: 'bar-chart-2', text: 'Dashboard' },
-                    { path: '/dashboard/personal', icon: 'users', text: 'Gestión Personal' },
+                    { path: '/dashboard/personal', icon: 'users', text: 'Gestión de Personal' },
                     { path: '/dashboard/mi-perfil', icon: 'user', text: 'Mi Perfil' },
                 ],
             },
@@ -42,9 +42,9 @@ const Sidebar: React.FC = () => {
             {
                 section: 'Permisos',
                 items: [
-                    { path: '/dashboard/permisos', icon: 'check-square', text: 'Gestión Permisos' },
+                    { path: '/dashboard/permisos', icon: 'check-square', text: 'Gestión de Permisos' },
                     { path: '/dashboard/control-entrada-salida', icon: 'clock', text: 'Marcar Permiso' },
-                    { path: '/dashboard/historial-permisos', icon: 'archive', text: 'Historial Permisos' },
+                    { path: '/dashboard/historial-permisos', icon: 'archive', text: 'Historial de Permisos' },
                 ],
             },
             {
@@ -115,7 +115,7 @@ const Sidebar: React.FC = () => {
                     <img src={logoMin} alt="Logo" className="navbar-image" />
                     <div className="sidebar-title">
                         <h2>SICAF</h2>
-                        <p>Sistema Control Asistencia Facial</p>
+                        <p>Sistema de Control de Asistencia Facial</p>
                     </div>
                 </div>
 
