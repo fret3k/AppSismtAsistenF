@@ -13,6 +13,7 @@ import ControlEntradaSalidaPage from './ControlEntradaSalidaPage';
 import HistorialPermisosPage from './HistorialPermisosPage';
 import { ReporteMensualPage } from './ReporteMensualPage';
 import './Dashboard.css';
+import ManualUsuarioPage from './ManualUsuarioPage';
 import { asistenciaService } from '../services/asistenciaService';
 import type { EstadisticasDiaDTO } from '../types';
 
@@ -175,6 +176,10 @@ const DashboardHome: React.FC = () => {
                             <button className="action-btn" onClick={() => navigate('/dashboard/permisos')}>
                                 <Icon name="check-square" size={24} strokeWidth={2.5} />
                                 <span>Aprobar Permisos</span>
+                            </button>
+                            <button className="action-btn" onClick={() => navigate('/dashboard/ayuda')}>
+                                <Icon name="book" size={24} strokeWidth={2.5} />
+                                <span>Manual de Usuario</span>
                             </button>
                         </div>
                     </div>
@@ -350,8 +355,8 @@ const Dashboard: React.FC = () => {
             <Route
                 path="/ayuda"
                 element={
-                    <DashboardLayout title="Ayuda" subtitle="Centro de ayuda">
-                        <PlaceholderPage title="Ayuda" />
+                    <DashboardLayout title="Manual de Usuario" subtitle="Documentación y ayuda del sistema">
+                        <ManualUsuarioPage />
                     </DashboardLayout>
                 }
             />
